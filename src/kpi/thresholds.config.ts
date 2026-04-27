@@ -54,6 +54,21 @@ export const BUGS_PER_US_THRESHOLDS: ThresholdConfig = {
   critical:  { max: Infinity, color: '#ef4444', label: '> 1 bug/US' },
 };
 
+// QW1: First Time Right Rate (percentage, higher is better)
+export const FIRST_TIME_RIGHT_THRESHOLDS: ThresholdConfig = {
+  excellent: { max: 100,      color: '#22c55e', label: '>= 80%' },
+  good:      { max: 80,       color: '#84cc16', label: '>= 60%' },
+  warning:   { max: 60,       color: '#f59e0b', label: '>= 40%' },
+  critical:  { max: 40,       color: '#ef4444', label: '< 40%' },
+};
+
+export function getFirstTimeRightThreshold(percent: number): ThresholdLevel {
+  if (percent >= 80) return FIRST_TIME_RIGHT_THRESHOLDS.excellent;
+  if (percent >= 60) return FIRST_TIME_RIGHT_THRESHOLDS.good;
+  if (percent >= 40) return FIRST_TIME_RIGHT_THRESHOLDS.warning;
+  return FIRST_TIME_RIGHT_THRESHOLDS.critical;
+}
+
 export function getThresholdLevel(value: number, thresholds: ThresholdConfig): ThresholdLevel {
   if (value <= thresholds.excellent.max) return thresholds.excellent;
   if (value <= thresholds.good.max) return thresholds.good;

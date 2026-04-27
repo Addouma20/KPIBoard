@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SprintMRIterationsResult } from '../../types/kpi.types';
 import { getThresholdLevel, MR_ITERATIONS_THRESHOLDS } from '../../kpi/thresholds.config';
+import { getFirstTimeRightThreshold } from '../../kpi/thresholds.config';
 import KPITooltip from './KPITooltip';
 
 interface MRIterationsCardProps {
@@ -99,6 +100,14 @@ const MRIterationsCard: React.FC<MRIterationsCardProps> = ({ data, isLoading, er
 
       <p className="text-sm text-gray-500 mt-auto">
         Médiane : {data.medianIterations !== null ? data.medianIterations.toFixed(1) : '—'}
+        {data.firstTimeRightPercent !== null && (
+          <>
+            {' · '}
+            <span style={{ color: getFirstTimeRightThreshold(data.firstTimeRightPercent).color }}>
+              FTR {data.firstTimeRightPercent}%
+            </span>
+          </>
+        )}
       </p>
     </div>
   );

@@ -4,6 +4,7 @@ import type {
   SprintMRIterationsResult,
   SprintLeadCycleTimeResult,
   SprintBugsResult,
+  Insight,
 } from '../types';
 
 const CompletionRateCard = React.lazy(() => import('./kpi-cards/CompletionRateCard'));
@@ -13,6 +14,9 @@ const BugsPerUSCard = React.lazy(() => import('./kpi-cards/BugsPerUSCard'));
 const DevRankingCard = React.lazy(() => import('./kpi-cards/DevRankingCard'));
 const StatusDistributionCard = React.lazy(() => import('./kpi-cards/StatusDistributionCard'));
 const KanbanTrendCard = React.lazy(() => import('./kpi-cards/KanbanTrendCard'));
+const InsightsPanel = React.lazy(() => import('./kpi-cards/InsightsPanel'));
+const IAComparisonCard = React.lazy(() => import('./kpi-cards/IAComparisonCard'));
+const ROICard = React.lazy(() => import('./kpi-cards/ROICard'));
 
 interface KanbanAllKPIResponse {
   periodLabel: string;
@@ -42,6 +46,7 @@ const KanbanKPIGrid: React.FC<KanbanKPIGridProps> = ({ projectKey, startDate, en
   const [data, setData] = useState<KanbanAllKPIResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [insights, setInsights] = useState<Insight[]>([]);
 
   const fetchKPIs = useCallback(async () => {
     if (!startDate || !endDate) return;
@@ -50,13 +55,21 @@ const KanbanKPIGrid: React.FC<KanbanKPIGridProps> = ({ projectKey, startDate, en
     setError(null);
     try {
       const params = new URLSearchParams({ projectKey, startDate, endDate });
-      const response = await fetch(`/api/kpi/all-kanban?${params}`);
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error?.message ?? `Erreur HTTP ${response.status}`);
+      const [kpiResponse, insightsResponse] = await Promise.all([
+        fetch(`/api/kpi/all-kanban?${params}`),
+        fetch(`/api/kpi/insights?${params}`).catch(() => null),
+      ]);
+      if (!kpiResponse.ok) {
+        const body = await kpiResponse.json().catch(() => null);
+        throw new Error(body?.error?.message ?? `Erreur HTTP ${kpiResponse.status}`);
       }
-      const json: KanbanAllKPIResponse = await response.json();
+      const json: KanbanAllKPIResponse = await kpiResponse.json();
       setData(json);
+
+      if (insightsResponse?.ok) {
+        const insightsJson = await insightsResponse.json();
+        setInsights(insightsJson.insights ?? []);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -147,6 +160,31 @@ const KanbanKPIGrid: React.FC<KanbanKPIGridProps> = ({ projectKey, startDate, en
       {/* Row 5: Kanban Trend (6 derniers mois) */}
       <React.Suspense fallback={<CardFallback />}>
         <KanbanTrendCard projectKey={projectKey} />
+      </React.Suspense>
+
+      {/* Row 6: Insights automatiques */}
+      {insights.length > 0 && (
+        <React.Suspense fallback={<CardFallback />}>
+          <InsightsPanel insights={insights} />
+        </React.Suspense>
+      )}
+
+      {/* Row 7: IA vs Non-IA Comparison */}
+      <React.Suspense fallback={<CardFallback />}>
+        <IAComparisonCard
+          projectKey={projectKey}
+          startDate={startDate}
+          endDate={endDate}
+        />
+      </React.Suspense>
+
+      {/* Row 8: ROI IA */}
+      <React.Suspense fallback={<CardFallback />}>
+        <ROICard
+          projectKey={projectKey}
+          startDate={startDate}
+          endDate={endDate}
+        />
       </React.Suspense>
     </div>
   );

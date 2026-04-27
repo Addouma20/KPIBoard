@@ -13,6 +13,7 @@ interface DevAccumulator {
   displayName: string;
   usCount: number;
   usDone: number;
+  storyPoints: number;
   leadTimeValues: number[];
   cycleDevTimeValues: number[];
   mrIterationValues: number[];
@@ -46,6 +47,7 @@ function computeScores(devs: DevAccumulator[]): DevStats[] {
       displayName: d.displayName,
       usCount: d.usCount,
       usDone: d.usDone,
+      totalStoryPoints: d.storyPoints > 0 ? d.storyPoints : null,
       avgLeadTimeHours: avgLead !== null ? Math.round(avgLead * 10) / 10 : null,
       avgCycleDevTimeHours: avgCycleDev !== null ? Math.round(avgCycleDev * 10) / 10 : null,
       avgMRIterations: avgMR !== null ? Math.round(avgMR * 10) / 10 : null,
@@ -127,6 +129,7 @@ export async function calculateSprintDevRanking(
         displayName: assigneeName,
         usCount: 0,
         usDone: 0,
+        storyPoints: 0,
         leadTimeValues: [],
         cycleDevTimeValues: [],
         mrIterationValues: [],
@@ -136,6 +139,9 @@ export async function calculateSprintDevRanking(
 
     const acc = devMap.get(assigneeName)!;
     acc.usCount++;
+
+    const sp = (issue.fields.story_points as number) ?? 0;
+    acc.storyPoints += sp;
 
     if (isDoneStatus(issue.fields.status.name)) {
       acc.usDone++;

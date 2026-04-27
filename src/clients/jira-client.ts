@@ -203,7 +203,7 @@ export class JiraClient {
     const defaultFields = [
       'summary', 'status', 'issuetype', 'priority', 'assignee',
       'created', 'resolutiondate', 'issuelinks', 'subtasks',
-      'labels', 'components', 'description',
+      'labels', 'components', 'description', 'story_points',
     ];
 
     const allIssues: JiraIssue[] = [];
@@ -245,7 +245,7 @@ export class JiraClient {
     const defaultFields = [
       'summary', 'status', 'issuetype', 'priority', 'assignee',
       'created', 'resolutiondate', 'issuelinks', 'subtasks',
-      'labels', 'components', 'description',
+      'labels', 'components', 'description', 'story_points',
     ];
 
     const allIssues: JiraIssue[] = [];
@@ -277,21 +277,22 @@ export class JiraClient {
     return this.getIssuesByJQL(jql, `kanban-issues:${projectKey}:${startDate}:${endDate}`);
   }
 
-  /** Issues matching AI-agent markers in comments, scoped by sprint or date range */
+  /** Issues matching AI-agent markers in comments or ai-assisted label, scoped by sprint or date range */
   async getAIAgentIssues(scope: { sprintId: number } | { projectKey: string; startDate: string; endDate: string }): Promise<Result<JiraIssue[]>> {
     const markers = getAIMarkers();
 
-    // Build JQL: (comment ~ "marker1" OR comment ~ "marker2" OR ...)
+    // Build JQL: labels = "ai-assisted" OR (comment ~ "marker1" OR comment ~ "marker2" OR ...)
     const commentFilter = markers.map(m => `comment ~ "${m}"`).join(' OR ');
+    const aiFilter = `labels = "ai-assisted" OR ${commentFilter}`;
 
     let jql: string;
     let cacheKey: string;
 
     if ('sprintId' in scope) {
-      jql = `sprint = ${scope.sprintId} AND (${commentFilter}) ORDER BY key ASC`;
+      jql = `sprint = ${scope.sprintId} AND (${aiFilter}) ORDER BY key ASC`;
       cacheKey = `ai-agent-issues:sprint:${scope.sprintId}`;
     } else {
-      jql = `project = "${scope.projectKey}" AND updated >= "${scope.startDate}" AND updated <= "${scope.endDate}" AND (${commentFilter}) ORDER BY key ASC`;
+      jql = `project = "${scope.projectKey}" AND updated >= "${scope.startDate}" AND updated <= "${scope.endDate}" AND (${aiFilter}) ORDER BY key ASC`;
       cacheKey = `ai-agent-issues:kanban:${scope.projectKey}:${scope.startDate}:${scope.endDate}`;
     }
 
@@ -302,9 +303,49 @@ export class JiraClient {
 
   async getIssueWithChangelog(issueKey: string): Promise<Result<JiraIssue>> {
     return this.request<JiraIssue>(
-      `/rest/api/2/issue/${issueKey}?expand=changelog&fields=summary,status,issuetype,priority,assignee,created,resolutiondate,issuelinks,subtasks,labels,components,description`,
+      `/rest/api/2/issue/${issueKey}?expand=changelog&fields=summary,status,issuetype,priority,assignee,created,resolutiondate,issuelinks,subtasks,labels,components,description,story_points`,
       `issue-changelog:${issueKey}`
     );
+  }
+
+  /** MT5: Batch fetch issues with changelog via JQL expand=changelog (avoids N+1 requests) */
+  async getIssuesWithChangelogByJQL(jql: string, cacheKey: string): Promise<Result<JiraIssue[]>> {
+    const cached = this.getCached<JiraIssue[]>(cacheKey);
+    if (cached) return success(cached);
+
+    const defaultFields = [
+      'summary', 'status', 'issuetype', 'priority', 'assignee',
+      'created', 'resolutiondate', 'issuelinks', 'subtasks',
+      'labels', 'components', 'description', 'story_points',
+    ];
+
+    const allIssues: JiraIssue[] = [];
+    let startAt = 0;
+    const maxPerPage = 50;
+
+    while (true) {
+      const result = await this.post<JiraSearchResult & { issues: JiraIssue[] }>('/rest/api/2/search', {
+        jql,
+        startAt,
+        maxResults: maxPerPage,
+        fields: defaultFields,
+        expand: ['changelog'],
+      });
+
+      if (!result.success) return result;
+
+      for (const issue of result.data.issues) {
+        allIssues.push(issue);
+        // Populate individual issue changelog cache too
+        this.setCache(`issue-changelog:${issue.key}`, issue);
+      }
+
+      startAt += result.data.issues.length;
+      if (startAt >= result.data.total) break;
+    }
+
+    this.setCache(cacheKey, allIssues);
+    return success(allIssues);
   }
 
   // --- Issue comments ---

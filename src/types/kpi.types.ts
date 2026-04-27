@@ -53,6 +53,7 @@ export interface SprintMRIterationsResult {
   medianIterations: number | null;
   maxIterations: number | null;
   distribution: IterationDistribution;
+  firstTimeRightPercent: number | null;
   issueDetails: MRIterationsResult[];
 }
 
@@ -84,6 +85,8 @@ export interface LeadCycleTimeResult {
   isWIP: boolean;
   cycleTimeHours: number | null;
   cycleDevTimeHours: number | null;
+  pickupTimeHours: number | null;
+  devActiveTimeHours: number | null;
   inProgressDate: string | null;
   reviewDate: string | null;
   activeTimeHours: number | null;
@@ -93,6 +96,7 @@ export interface LeadCycleTimeResult {
   prApprovedDate: string | null;
   codeReviewDetails: CodeReviewDetail[];
   statusHistory: StatusPeriod[];
+  storyPoints: number | null;
 }
 
 export interface TimeStats {
@@ -110,6 +114,8 @@ export interface SprintLeadCycleTimeResult {
   leadTime: TimeStats;
   cycleTime: TimeStats;
   cycleDevTime: TimeStats;
+  pickupTime: TimeStats;
+  devActiveTime: TimeStats;
   codeReviewTime: TimeStats;
   issueDetails: LeadCycleTimeResult[];
   wipCount: number;
@@ -224,6 +230,7 @@ export interface DevStats {
   displayName: string;
   usCount: number;
   usDone: number;
+  totalStoryPoints: number | null;
   avgLeadTimeHours: number | null;
   avgCycleDevTimeHours: number | null;
   avgMRIterations: number | null;
@@ -271,4 +278,83 @@ export interface KanbanTrendPoint {
   avgLeadTimeHours: number | null;
   avgCycleDevTimeHours: number | null;
   bugsPerUSRatio: number | null;
+}
+
+// --- First Time Right Rate ---
+
+export interface FirstTimeRightResult {
+  totalWithReview: number;
+  approvedFirstTime: number;
+  firstTimeRightPercent: number | null;
+}
+
+// --- Data Quality ---
+
+export interface DataQuality {
+  totalIssues: number;
+  excludedOutliers: number;
+  missingData: number;
+  confidence: 'high' | 'medium' | 'low';
+  warnings: string[];
+}
+
+// --- Insights ---
+
+export type InsightSeverity = 'success' | 'info' | 'warning' | 'critical';
+
+export interface Insight {
+  id: string;
+  severity: InsightSeverity;
+  category: 'performance' | 'quality' | 'ai' | 'team' | 'trend';
+  message: string;
+  metric: string;
+  value: number | null;
+  delta: number | null;
+}
+
+// --- IA vs Non-IA Comparison ---
+
+export interface IAComparisonMetrics {
+  avgLeadTimeHours: number | null;
+  avgCycleDevTimeHours: number | null;
+  avgPickupTimeHours: number | null;
+  avgDevActiveTimeHours: number | null;
+  avgMRIterations: number | null;
+  bugsPerUSRatio: number | null;
+  firstTimeRightPercent: number | null;
+  completionRatePercent: number | null;
+  totalUS: number;
+  avgStoryPoints: number | null;
+}
+
+export interface IAComparisonResult {
+  periodLabel: string;
+  ia: IAComparisonMetrics;
+  nonIA: IAComparisonMetrics;
+  deltas: {
+    leadTimeDeltaPercent: number | null;
+    cycleDevTimeDeltaPercent: number | null;
+    pickupTimeDeltaPercent: number | null;
+    devActiveTimeDeltaPercent: number | null;
+    mrIterationsDeltaPercent: number | null;
+    bugsPerUSDeltaPercent: number | null;
+    firstTimeRightDeltaPercent: number | null;
+  };
+  insights: Insight[];
+  dataQuality: DataQuality;
+}
+
+// --- Management ROI ---
+
+export interface ROIMetrics {
+  periodLabel: string;
+  totalUS: number;
+  iaUS: number;
+  nonIAUS: number;
+  iaAdoptionPercent: number;
+  estimatedDaysSaved: number | null;
+  avgCycleDevReductionPercent: number | null;
+  avgLeadTimeReductionPercent: number | null;
+  iaFirstTimeRightPercent: number | null;
+  nonIAFirstTimeRightPercent: number | null;
 }

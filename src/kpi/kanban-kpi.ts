@@ -210,6 +210,11 @@ export async function calculateKanbanMRIterations(
     unavailable: issueDetails.filter((d) => d.iterationsCount === null).length,
   };
 
+  const totalWithReview = distribution.oneIteration + distribution.twoIterations + distribution.threeOrMore;
+  const firstTimeRightPercent = totalWithReview > 0
+    ? Math.round((distribution.oneIteration / totalWithReview) * 1000) / 10
+    : null;
+
   return success({
     sprintId: 0,
     sprintName: periodLabel,
@@ -217,6 +222,7 @@ export async function calculateKanbanMRIterations(
     medianIterations: median(validCounts) !== null ? round1(median(validCounts)!) : null,
     maxIterations: validCounts.length > 0 ? Math.max(...validCounts) : null,
     distribution,
+    firstTimeRightPercent,
     issueDetails,
   });
 }
@@ -231,6 +237,13 @@ export async function calculateKanbanLeadCycleTime(
   periodLabel: string,
   aiMode = false,
 ): Promise<Result<SprintLeadCycleTimeResult>> {
+  // MT5: Prefetch all changelogs in a single batch request to avoid N+1
+  if (stories.length > 0) {
+    const keys = stories.map((s) => s.key);
+    const batchJql = `key in (${keys.join(',')})`;
+    await jiraClient.getIssuesWithChangelogByJQL(batchJql, `batch-changelog:${keys.join(',')}`);
+  }
+
   // In AI mode, fetch the first AI comment date per issue to use as cycleDevTime end point
   const aiCommentDates: Map<string, string | null> = new Map();
   if (aiMode) {
@@ -261,6 +274,8 @@ export async function calculateKanbanLeadCycleTime(
   const leadValues = issueDetails.filter((d) => d.leadTimeHours !== null).map((d) => d.leadTimeHours!);
   const cycleValues = issueDetails.filter((d) => d.cycleTimeHours !== null).map((d) => d.cycleTimeHours!);
   const cycleDevValues = issueDetails.filter((d) => d.cycleDevTimeHours !== null).map((d) => d.cycleDevTimeHours!);
+  const pickupValues = issueDetails.filter((d) => d.pickupTimeHours !== null).map((d) => d.pickupTimeHours!);
+  const devActiveValues = issueDetails.filter((d) => d.devActiveTimeHours !== null).map((d) => d.devActiveTimeHours!);
   const crValues = issueDetails.filter((d) => d.codeReviewTimeHours !== null).map((d) => d.codeReviewTimeHours!);
 
   return success({
@@ -269,6 +284,8 @@ export async function calculateKanbanLeadCycleTime(
     leadTime: timeStats(leadValues),
     cycleTime: timeStats(cycleValues),
     cycleDevTime: timeStats(cycleDevValues),
+    pickupTime: timeStats(pickupValues),
+    devActiveTime: timeStats(devActiveValues),
     codeReviewTime: timeStats(crValues),
     issueDetails,
     wipCount: issueDetails.filter((d) => d.isWIP).length,
@@ -394,6 +411,7 @@ interface DevAccumulator {
   displayName: string;
   usCount: number;
   usDone: number;
+  storyPoints: number;
   leadTimeValues: number[];
   cycleDevTimeValues: number[];
   mrIterationValues: number[];
@@ -434,7 +452,7 @@ export async function calculateKanbanDevRanking(
     if (!devMap.has(assigneeName)) {
       devMap.set(assigneeName, {
         displayName: assigneeName,
-        usCount: 0, usDone: 0,
+        usCount: 0, usDone: 0, storyPoints: 0,
         leadTimeValues: [], cycleDevTimeValues: [],
         mrIterationValues: [], totalBugs: 0,
       });
@@ -443,6 +461,8 @@ export async function calculateKanbanDevRanking(
     const acc = devMap.get(assigneeName)!;
     acc.usCount++;
     if (isDoneStatus(issue.fields.status.name)) acc.usDone++;
+    const sp = (issue.fields.story_points as number) ?? 0;
+    acc.storyPoints += sp;
 
     if (leadResult.success) {
       if (leadResult.data.leadTimeHours !== null) acc.leadTimeValues.push(leadResult.data.leadTimeHours);
@@ -464,6 +484,7 @@ export async function calculateKanbanDevRanking(
     return {
       displayName: d.displayName,
       usCount: d.usCount, usDone: d.usDone,
+      totalStoryPoints: d.storyPoints > 0 ? d.storyPoints : null,
       avgLeadTimeHours: avgLead !== null ? round1(avgLead) : null,
       avgCycleDevTimeHours: avgCycleDev !== null ? round1(avgCycleDev) : null,
       avgMRIterations: avgMR !== null ? round1(avgMR) : null,

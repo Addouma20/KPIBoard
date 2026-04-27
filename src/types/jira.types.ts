@@ -36,6 +36,7 @@ export interface JiraIssueFields {
   issuelinks: JiraIssueLink[];
   subtasks: JiraSubtask[];
   description: string | null;
+  story_points: number | null;
   // Custom fields for MR iterations
   [key: string]: unknown;
 }

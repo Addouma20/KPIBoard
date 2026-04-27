@@ -47,7 +47,10 @@ const DevRow: React.FC<{ dev: DevStats; rank: number }> = ({ dev, rank }) => {
       </td>
       <td className="px-3 py-2.5">
         <span className="font-medium text-gray-800">{dev.displayName}</span>
-        <span className="ml-2 text-xs text-gray-400">{dev.usDone}/{dev.usCount} US</span>
+        <span className="ml-2 text-xs text-gray-400">
+          {dev.usDone}/{dev.usCount} US
+          {dev.totalStoryPoints !== null && ` · ${dev.totalStoryPoints} SP`}
+        </span>
       </td>
       <td className="px-3 py-2.5 text-right text-sm tabular-nums text-gray-600">
         {formatHours(dev.avgLeadTimeHours)}

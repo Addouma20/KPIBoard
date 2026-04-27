@@ -245,6 +245,26 @@ export async function calculateLeadCycleTime(
         ) / 10;
   }
 
+  // QW3: Decomposed Cycle Dev — Pickup Time (Ready → In Progress) and Dev Active Time (In Progress → In Review)
+  let pickupTimeHours: number | null = null;
+  if (readyForDevDate && inProgressDate) {
+    pickupTimeHours = options.businessDaysOnly
+      ? calculateBusinessHours(new Date(readyForDevDate), new Date(inProgressDate), bhConfig)
+      : Math.round(
+          ((new Date(inProgressDate).getTime() - new Date(readyForDevDate).getTime()) / (1000 * 60 * 60)) * 10
+        ) / 10;
+  }
+
+  let devActiveTimeHours: number | null = null;
+  const devActiveEnd = cycleDevEndDateOverride ?? reviewDate;
+  if (inProgressDate && devActiveEnd) {
+    devActiveTimeHours = options.businessDaysOnly
+      ? calculateBusinessHours(new Date(inProgressDate), new Date(devActiveEnd), bhConfig)
+      : Math.round(
+          ((new Date(devActiveEnd).getTime() - new Date(inProgressDate).getTime()) / (1000 * 60 * 60)) * 10
+        ) / 10;
+  }
+
   // Code Review Time: only actual review statuses (not changesRequested/rework)
   const codeReviewTimeHours = sumDurationsForStatuses(
     timeline,
@@ -279,6 +299,8 @@ export async function calculateLeadCycleTime(
     isWIP,
     cycleTimeHours: cycleTimeHours || null,
     cycleDevTimeHours,
+    pickupTimeHours,
+    devActiveTimeHours,
     inProgressDate,
     reviewDate,
     activeTimeHours: activeTimeHours || null,
@@ -288,6 +310,7 @@ export async function calculateLeadCycleTime(
     prApprovedDate,
     codeReviewDetails,
     statusHistory: timeline,
+    storyPoints: (issue.fields.story_points as number) ?? null,
   });
 }
 
@@ -329,6 +352,8 @@ export async function calculateSprintLeadCycleTime(
     leadTime: buildTimeStats(issueDetails.map((d) => d.leadTimeHours)),
     cycleTime: buildTimeStats(issueDetails.map((d) => d.cycleTimeHours)),
     cycleDevTime: buildTimeStats(issueDetails.map((d) => d.cycleDevTimeHours)),
+    pickupTime: buildTimeStats(issueDetails.map((d) => d.pickupTimeHours)),
+    devActiveTime: buildTimeStats(issueDetails.map((d) => d.devActiveTimeHours)),
     codeReviewTime: buildTimeStats(issueDetails.map((d) => d.codeReviewTimeHours)),
     issueDetails,
     wipCount,

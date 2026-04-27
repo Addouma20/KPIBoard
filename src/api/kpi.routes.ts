@@ -8,6 +8,8 @@ import { calculateSprintDevRanking } from '../kpi/dev-ranking.kpi';
 import { calculateKanbanAllKPIs, calculateKanbanDevRanking } from '../kpi/kanban-kpi';
 import { calculateStatusDistribution, calculateKanbanStatusDistribution } from '../kpi/status-distribution.kpi';
 import { calculateKanbanTrend } from '../kpi/kanban-trend.kpi';
+import { generateAllInsights } from '../kpi/insights';
+import { calculateIAComparison, calculateROIMetrics } from '../kpi/ia-comparison.kpi';
 import { isUserStory } from '../types/jira.types';
 import type { Result } from '../types';
 
@@ -266,11 +268,35 @@ router.get('/all-kanban', async (req: Request, res: Response) => {
   const params = requireDateRange(req, res);
   if (!params) return;
 
+  // MT3: Advanced filters
+  const filterDev = req.query.filterDev as string | undefined;
+  const filterComponent = req.query.filterComponent as string | undefined;
+
+  const client = getClient();
+  const issuesResult = await client.getKanbanIssues(params.projectKey, params.startDate, params.endDate);
+  if (!issuesResult.success) {
+    sendResult(res, issuesResult);
+    return;
+  }
+
+  let filteredIssues = issuesResult.data;
+  if (filterDev) {
+    filteredIssues = filteredIssues.filter((i) =>
+      i.fields.assignee?.displayName.toLowerCase().includes(filterDev.toLowerCase()),
+    );
+  }
+  if (filterComponent) {
+    filteredIssues = filteredIssues.filter((i) =>
+      i.fields.components.some((c) => c.name.toLowerCase().includes(filterComponent.toLowerCase())),
+    );
+  }
+
   const result = await calculateKanbanAllKPIs(
-    getClient(),
+    client,
     params.projectKey,
     params.startDate,
     params.endDate,
+    filteredIssues,
   );
   sendResult(res, result);
 });
@@ -368,6 +394,52 @@ router.get('/trend-kanban', async (req: Request, res: Response) => {
   const months = Math.min(Number(req.query.months) || 6, 12);
 
   const result = await calculateKanbanTrend(getClient(), projectKey, months);
+  sendResult(res, result);
+});
+
+// --- Insights (auto-generated analysis) ---
+
+router.get('/insights', async (req: Request, res: Response) => {
+  const params = requireDateRange(req, res);
+  if (!params) return;
+
+  const result = await calculateKanbanAllKPIs(
+    getClient(), params.projectKey, params.startDate, params.endDate,
+  );
+
+  if (!result.success) { sendResult(res, result); return; }
+
+  const insights = generateAllInsights(
+    result.data.completionRate,
+    result.data.mrIterations,
+    result.data.leadCycleTime,
+    result.data.bugs,
+  );
+
+  res.json({ periodLabel: result.data.periodLabel, insights });
+});
+
+// --- IA vs Non-IA Comparison ---
+
+router.get('/ia-comparison', async (req: Request, res: Response) => {
+  const params = requireDateRange(req, res);
+  if (!params) return;
+
+  const result = await calculateIAComparison(
+    getClient(), params.projectKey, params.startDate, params.endDate,
+  );
+  sendResult(res, result);
+});
+
+// --- Management ROI ---
+
+router.get('/roi', async (req: Request, res: Response) => {
+  const params = requireDateRange(req, res);
+  if (!params) return;
+
+  const result = await calculateROIMetrics(
+    getClient(), params.projectKey, params.startDate, params.endDate,
+  );
   sendResult(res, result);
 });
 

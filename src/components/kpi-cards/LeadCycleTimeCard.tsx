@@ -114,7 +114,7 @@ const LeadCycleTimeCard: React.FC<LeadCycleTimeCardProps> = ({ data, isLoading, 
       )}
 
       {/* Avg Lead Time / Avg Cycle Dev Time */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-2">
         <div className="rounded-xl bg-gray-50 px-4 py-3">
           <p className="text-xs text-gray-400 mb-0.5">
             <KPITooltip text={"Moyenne du temps total entre le premier statut À faire/Ready et le statut Terminé/Done.\nInclut tout le temps d'attente, de développement et de revue.\nCalculé en jours ouvrés (lun-ven, 9h-18h).\n1 jour ouvré = 9 heures."}>
@@ -134,6 +134,38 @@ const LeadCycleTimeCard: React.FC<LeadCycleTimeCardProps> = ({ data, isLoading, 
           <p className="text-[10px] text-gray-400">À faire → À valider</p>
         </div>
       </div>
+
+      {/* QW3: Decomposed Cycle Dev — Pickup Time + Dev Active Time */}
+      {(data.pickupTime?.averageHours !== null || data.devActiveTime?.averageHours !== null) && (
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="rounded-xl bg-amber-50 px-4 py-2">
+            <p className="text-xs text-gray-400 mb-0.5">
+              <KPITooltip text="Temps d'attente entre Ready et le début du développement (In Progress).">
+                Pickup Time
+              </KPITooltip>
+            </p>
+            <p className="text-lg font-bold text-amber-600 tabular-nums">
+              {data.pickupTime?.averageHours !== null
+                ? `${(data.pickupTime.averageHours / BUSINESS_HOURS_PER_DAY).toFixed(1)}j`
+                : '—'}
+            </p>
+            <p className="text-[10px] text-gray-400">Ready → In Progress</p>
+          </div>
+          <div className="rounded-xl bg-green-50 px-4 py-2">
+            <p className="text-xs text-gray-400 mb-0.5">
+              <KPITooltip text="Temps de codage effectif entre In Progress et la soumission en revue.">
+                Dev Actif
+              </KPITooltip>
+            </p>
+            <p className="text-lg font-bold text-green-600 tabular-nums">
+              {data.devActiveTime?.averageHours !== null
+                ? `${(data.devActiveTime.averageHours / BUSINESS_HOURS_PER_DAY).toFixed(1)}j`
+                : '—'}
+            </p>
+            <p className="text-[10px] text-gray-400">In Progress → In Review</p>
+          </div>
+        </div>
+      )}
 
       {/* Stacked bar */}
       {breakdownTotal > 0 && (

@@ -151,6 +151,12 @@ export async function calculateSprintMRIterations(
     unavailable: issueDetails.filter((d) => d.iterationsCount === null).length,
   };
 
+  // QW1: First Time Right = issues approved on first review iteration / total with review data
+  const totalWithReview = distribution.oneIteration + distribution.twoIterations + distribution.threeOrMore;
+  const firstTimeRightPercent = totalWithReview > 0
+    ? Math.round((distribution.oneIteration / totalWithReview) * 1000) / 10
+    : null;
+
   return success({
     sprintId,
     sprintName,
@@ -158,6 +164,7 @@ export async function calculateSprintMRIterations(
     medianIterations: median(availableCounts),
     maxIterations: max(availableCounts),
     distribution,
+    firstTimeRightPercent,
     issueDetails,
   });
 }
