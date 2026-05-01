@@ -37,7 +37,7 @@
     "@types/express": "^5.0.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "jsdom": "^27.0.1",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0"
   }
