@@ -37,7 +37,7 @@ export function countBusinessDays(start: Date, end: Date): number {
     current.setDate(current.getDate() + 1);
   }
 
-  return Math.max(0, count - 1); // Subtract 1 because we count intervals, not days
+  return Math.max(0, count);
 }
 
 export function calculateBusinessHours(

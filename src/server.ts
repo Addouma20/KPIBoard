@@ -78,9 +78,10 @@ app.post('/api/auth/select-project', async (req, res) => {
 });
 
 app.get('/api/auth/status', async (_req, res) => {
-  // Already connected
+  // Already connected — return current projectKey so the frontend can restore state
   if (hasJiraClient()) {
-    res.json({ connected: true });
+    const client = getJiraClient();
+    res.json({ connected: true, projectKey: client.getProjectKey() });
     return;
   }
 
@@ -101,7 +102,7 @@ app.get('/api/auth/status', async (_req, res) => {
     const result = await client.validateConnection();
     if (result.success) {
       console.log('[Auth] Auto-connected via env token as:', result.data.displayName);
-      res.json({ connected: true, user: result.data.displayName });
+      res.json({ connected: true, user: result.data.displayName, projectKey: client.getProjectKey() });
       return;
     }
     resetJiraClient();
@@ -118,6 +119,7 @@ app.get('/api/kpi/boards', async (_req, res) => {
   if (result.success) {
     res.json(result.data);
   } else {
+    console.error('[/api/kpi/boards] Jira error:', JSON.stringify(result.error));
     res.status(502).json({ error: result.error });
   }
 });
@@ -135,6 +137,7 @@ app.get('/api/kpi/sprints', async (req, res) => {
   if (result.success) {
     res.json(result.data);
   } else {
+    console.error('[/api/kpi/sprints] Jira error:', JSON.stringify(result.error));
     res.status(502).json({ error: result.error });
   }
 });

@@ -122,7 +122,47 @@ const StatusDistributionCard: React.FC<StatusDistributionCardProps> = ({
           📊 Distribution des statuts
         </KPITooltip>
       </h3>
-      <p className="text-xs text-gray-400 mb-4">{data.totalUS} US au total</p>
+      <p className="text-xs text-gray-400 mb-3">{data.totalUS} US Dev au total</p>
+
+      {/* KPI metrics derived from actual distribution */}
+      <div className="flex flex-wrap gap-3 mb-4">
+        {(() => {
+          const doneCount = data.byCategoryCount.done;
+          const inProgressCount = data.byCategoryCount.in_progress + data.byCategoryCount.review;
+          const todoCount = data.byCategoryCount.todo;
+          const blockedCount = data.byCategoryCount.blocked;
+          const completionPct = data.totalUS > 0 ? Math.round((doneCount / data.totalUS) * 100) : 0;
+          const inProgressPct = data.totalUS > 0 ? Math.round((inProgressCount / data.totalUS) * 100) : 0;
+          return (
+            <>
+              <div className="flex flex-col items-center rounded-xl bg-green-50 px-4 py-2 min-w-[80px]">
+                <span className="text-lg font-extrabold text-green-600">{completionPct}%</span>
+                <span className="text-[10px] text-green-500 font-medium">Réalisé</span>
+                <span className="text-[9px] text-gray-400">{doneCount} US</span>
+              </div>
+              <div className="flex flex-col items-center rounded-xl bg-blue-50 px-4 py-2 min-w-[80px]">
+                <span className="text-lg font-extrabold text-blue-600">{inProgressPct}%</span>
+                <span className="text-[10px] text-blue-500 font-medium">En cours</span>
+                <span className="text-[9px] text-gray-400">{inProgressCount} US</span>
+              </div>
+              {todoCount > 0 && (
+                <div className="flex flex-col items-center rounded-xl bg-gray-50 px-4 py-2 min-w-[80px]">
+                  <span className="text-lg font-extrabold text-gray-500">{Math.round((todoCount / data.totalUS) * 100)}%</span>
+                  <span className="text-[10px] text-gray-400 font-medium">À faire</span>
+                  <span className="text-[9px] text-gray-400">{todoCount} US</span>
+                </div>
+              )}
+              {blockedCount > 0 && (
+                <div className="flex flex-col items-center rounded-xl bg-red-50 px-4 py-2 min-w-[80px]">
+                  <span className="text-lg font-extrabold text-red-500">{Math.round((blockedCount / data.totalUS) * 100)}%</span>
+                  <span className="text-[10px] text-red-400 font-medium">Bloqué</span>
+                  <span className="text-[9px] text-gray-400">{blockedCount} US</span>
+                </div>
+              )}
+            </>
+          );
+        })()}
+      </div>
 
       {/* Category summary pills */}
       <div className="flex flex-wrap gap-2 mb-4">

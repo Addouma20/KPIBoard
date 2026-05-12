@@ -49,9 +49,14 @@ export interface IterationDistribution {
 export interface SprintMRIterationsResult {
   sprintId: number;
   sprintName: string;
+  /** Nb moyen de passes de review (1 = bon du premier coup). Utilisé pour firstTimeRightPercent. */
   averageIterations: number | null;
   medianIterations: number | null;
   maxIterations: number | null;
+  /** KPI 2 — Indice de Rework : nb moyen d'allers-retours par MR (0 = aucun rework). */
+  averageReworkCount: number | null;
+  /** Nombre total de retours (somme de tous les allers-retours détectés). */
+  totalReworkCount: number | null;
   distribution: IterationDistribution;
   firstTimeRightPercent: number | null;
   issueDetails: MRIterationsResult[];
@@ -83,12 +88,18 @@ export interface LeadCycleTimeResult {
   readyDate: string | null;
   doneDate: string | null;
   isWIP: boolean;
+  /** Ticket to Merge: elapsed business hours from first In Progress → Done (Merged) */
+  ticketToMergeHours: number | null;
   cycleTimeHours: number | null;
   cycleDevTimeHours: number | null;
   pickupTimeHours: number | null;
   devActiveTimeHours: number | null;
   inProgressDate: string | null;
+  lastInProgressDate: string | null;
+  /** Date when the developer assigned themselves the card (Assign-JiraIssueToMe). Used as start of CycleDevTime. */
+  assignedToMeDate: string | null;
   reviewDate: string | null;
+  aiCommentDate: string | null;
   activeTimeHours: number | null;
   waitTimeHours: number | null;
   codeReviewTimeHours: number | null;
@@ -112,6 +123,8 @@ export interface SprintLeadCycleTimeResult {
   sprintId: number;
   sprintName: string;
   leadTime: TimeStats;
+  /** Ticket to Merge: from first In Progress to Done/Merged */
+  ticketToMerge: TimeStats;
   cycleTime: TimeStats;
   cycleDevTime: TimeStats;
   pickupTime: TimeStats;
@@ -131,6 +144,9 @@ export interface LeadCycleTimeOptions {
   inProgressStatuses: string[];
   reviewStatuses: string[];
   blockedStatuses: string[];
+  /** When true, CycleDevTime = BusinessHours(assignedToMeDate, firstAICommentDate).
+   *  When false/undefined, CycleDevTime = BusinessHours(firstInProgressDate, firstInReviewDate). */
+  isIA?: boolean;
 }
 
 // --- EPIC-05: Bugs per US ---
@@ -249,7 +265,7 @@ export interface SprintDevRankingResult {
 
 export interface StatusCount {
   status: string;
-  category: 'done' | 'in_progress' | 'review' | 'todo' | 'blocked' | 'other';
+  category: 'done' | 'in_progress' | 'review' | 'todo' | 'blocked' | 'cancelled' | 'other';
   count: number;
 }
 
@@ -263,6 +279,7 @@ export interface StatusDistributionResult {
     review: number;
     todo: number;
     blocked: number;
+    cancelled: number;
     other: number;
   };
 }
@@ -320,10 +337,18 @@ export interface IAComparisonMetrics {
   avgPickupTimeHours: number | null;
   avgDevActiveTimeHours: number | null;
   avgMRIterations: number | null;
+  /** Indice de Rework : nb moyen d'allers-retours par MR (0 = premier coup). averageReworkCount from mr-iterations. */
+  avgReworkCount: number | null;
+  /** Nombre total de retours (allers-retours cumulés sur toutes les MRs). */
+  totalReworkCount: number | null;
+  /** Nombre de MR ayant des données de review disponibles (dénominateur réel de avgReworkCount). */
+  totalMRWithReviewData: number | null;
   bugsPerUSRatio: number | null;
   firstTimeRightPercent: number | null;
   completionRatePercent: number | null;
   totalUS: number;
+  /** Number of US that have a non-null cycleDevTimeHours (used to compute the average). */
+  cycleDevUSCount: number | null;
   avgStoryPoints: number | null;
 }
 
@@ -342,6 +367,25 @@ export interface IAComparisonResult {
   };
   insights: Insight[];
   dataQuality: DataQuality;
+}
+
+// --- US Detail per profile (IA / Human) ---
+
+export interface USDevDetailRow {
+  key: string;
+  summary: string;
+  status: string;
+  cycleDevTimeHours: number | null;
+  cycleDevTimeDays: number | null;
+  storyPoints: number | null;
+  assignee: string;
+  contributors: string[];
+}
+
+export interface IAUSDetailResult {
+  periodLabel: string;
+  iaIssues: USDevDetailRow[];
+  nonIAIssues: USDevDetailRow[];
 }
 
 // --- Management ROI ---

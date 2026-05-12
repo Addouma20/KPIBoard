@@ -22,11 +22,11 @@ export const COMPLETION_RATE_THRESHOLDS: ThresholdConfig = {
   critical:  { max: 40,  color: '#ef4444', label: '< 40%' },
 };
 
-// EPIC-03: MR Iterations (average count)
+// EPIC-03: MR Rework Count (average allers-retours, 0 = first-time-right)
 export const MR_ITERATIONS_THRESHOLDS: ThresholdConfig = {
-  excellent: { max: 1.2,      color: '#22c55e', label: 'Excellent' },
-  good:      { max: 1.8,      color: '#84cc16', label: 'Bon' },
-  warning:   { max: 2.5,      color: '#f59e0b', label: 'A surveiller' },
+  excellent: { max: 0.2,      color: '#22c55e', label: 'Excellent' },
+  good:      { max: 0.8,      color: '#84cc16', label: 'Bon' },
+  warning:   { max: 1.5,      color: '#f59e0b', label: 'A surveiller' },
   critical:  { max: Infinity,  color: '#ef4444', label: 'Critique' },
 };
 

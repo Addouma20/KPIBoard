@@ -109,6 +109,47 @@ function findFirstTransitionTo(
   return null;
 }
 
+function findLastTransitionTo(
+  histories: JiraChangelogHistory[],
+  targetStatuses: string[]
+): string | null {
+  const lower = targetStatuses.map(s => s.toLowerCase());
+  const sorted = [...histories].sort(
+    (a, b) => new Date(a.created).getTime() - new Date(b.created).getTime()
+  );
+
+  let lastDate: string | null = null;
+  for (const history of sorted) {
+    for (const item of history.items) {
+      if (item.field === 'status' && item.toString && lower.includes(item.toString.toLowerCase())) {
+        lastDate = history.created;
+      }
+    }
+  }
+
+  return lastDate;
+}
+
+/**
+ * Returns the date of the first changelog entry where the assignee field was set
+ * (i.e., someone ran "Assign to me" on the card). Returns null if never assigned.
+ */
+function findFirstAssigneeDate(histories: JiraChangelogHistory[]): string | null {
+  const sorted = [...histories].sort(
+    (a, b) => new Date(a.created).getTime() - new Date(b.created).getTime()
+  );
+
+  for (const history of sorted) {
+    for (const item of history.items) {
+      if (item.field === 'assignee' && item.to !== null) {
+        return history.created;
+      }
+    }
+  }
+
+  return null;
+}
+
 function sumDurationsForStatuses(
   periods: StatusPeriod[],
   targetStatuses: string[],
@@ -183,7 +224,6 @@ export async function calculateLeadCycleTime(
   jiraClient: JiraClient,
   issueKey: string,
   options: LeadCycleTimeOptions = DEFAULT_OPTIONS,
-  cycleDevEndDateOverride?: string | null,
 ): Promise<Result<LeadCycleTimeResult>> {
   const issueResult = await jiraClient.getIssueWithChangelog(issueKey);
   if (!issueResult.success) return issueResult;
@@ -226,26 +266,54 @@ export async function calculateLeadCycleTime(
   const cycleTimeHours = sumDurationsForStatuses(timeline, activeStatuses, now, options);
   const activeTimeHours = cycleTimeHours;
 
-  // Cycle Dev Time: first Ready/À faire → first "In Review" (or AI comment date if overridden)
+  // Cycle Dev Time: first transition to a "dev active" status → first transition to "In Review"
+  // "Dev active" = IN_PROGRESS statuses that are NOT also review statuses (avoids 0.0j overlap)
   const allReviewStatuses = [...REVIEW_STATUSES.inReview, ...REVIEW_STATUSES.changesRequested];
+  const devStartStatuses = options.inProgressStatuses.filter(
+    s => !allReviewStatuses.some(r => r.toLowerCase() === s.toLowerCase())
+  );
   const readyForDevDate = findFirstTransitionTo(histories, options.readyStatuses)
     ?? issue.fields.created; // fallback: issue creation = entered backlog/à faire
   const inProgressDate = findFirstTransitionTo(histories, options.inProgressStatuses);
-  const reviewDate = findFirstTransitionTo(histories, allReviewStatuses);
+  const lastInProgressDate = findLastTransitionTo(histories, options.inProgressStatuses);
+  const reviewDate = findFirstTransitionTo(histories, REVIEW_STATUSES.inReview);
 
-  // When cycleDevEndDateOverride is provided (AI agent mode), use it as end point
-  const cycleDevEndDate = cycleDevEndDateOverride ?? reviewDate;
+  // For cycleDevTime: use devStartStatuses (excludes review overlap) as start point
+  const firstDevStartDate = findFirstTransitionTo(histories, devStartStatuses);
+
+  // Date when someone assigned themselves the card (Assign-JiraIssueToMe)
+  const assignedToMeDate = findFirstAssigneeDate(histories);
+
+  // Fetch first AI comment date
+  const aiCommentDate = await jiraClient.findFirstAICommentDate(issueKey);
 
   let cycleDevTimeHours: number | null = null;
-  if (readyForDevDate && cycleDevEndDate) {
+
+  // Unified formula: first dev-active status → first In Review
+  // This matches the UI: "1er In Progress → 1ère In Review = temps dev actif"
+  const cycleDevStart = firstDevStartDate;
+  const cycleDevEnd = reviewDate;
+
+  if (cycleDevStart && cycleDevEnd) {
     cycleDevTimeHours = options.businessDaysOnly
-      ? calculateBusinessHours(new Date(readyForDevDate), new Date(cycleDevEndDate), bhConfig)
+      ? calculateBusinessHours(new Date(cycleDevStart), new Date(cycleDevEnd), bhConfig)
       : Math.round(
-          ((new Date(cycleDevEndDate).getTime() - new Date(readyForDevDate).getTime()) / (1000 * 60 * 60)) * 10
+          ((new Date(cycleDevEnd).getTime() - new Date(cycleDevStart).getTime()) / (1000 * 60 * 60)) * 10
         ) / 10;
   }
 
-  // QW3: Decomposed Cycle Dev — Pickup Time (Ready → In Progress) and Dev Active Time (In Progress → In Review)
+  // Ticket to Merge: elapsed time from first In Progress → Done (business hours, including wait/review)
+  let ticketToMergeHours: number | null = null;
+  if (inProgressDate) {
+    const mergeEnd = doneDate ? new Date(doneDate) : now;
+    ticketToMergeHours = options.businessDaysOnly
+      ? calculateBusinessHours(new Date(inProgressDate), mergeEnd, bhConfig)
+      : Math.round(
+          ((mergeEnd.getTime() - new Date(inProgressDate).getTime()) / (1000 * 60 * 60)) * 10
+        ) / 10;
+  }
+
+  // QW3: Decomposed Cycle Dev — Pickup Time (Ready → In Progress) and Dev Active Time (last In Progress → first AI comment)
   let pickupTimeHours: number | null = null;
   if (readyForDevDate && inProgressDate) {
     pickupTimeHours = options.businessDaysOnly
@@ -255,15 +323,8 @@ export async function calculateLeadCycleTime(
         ) / 10;
   }
 
-  let devActiveTimeHours: number | null = null;
-  const devActiveEnd = cycleDevEndDateOverride ?? reviewDate;
-  if (inProgressDate && devActiveEnd) {
-    devActiveTimeHours = options.businessDaysOnly
-      ? calculateBusinessHours(new Date(inProgressDate), new Date(devActiveEnd), bhConfig)
-      : Math.round(
-          ((new Date(devActiveEnd).getTime() - new Date(inProgressDate).getTime()) / (1000 * 60 * 60)) * 10
-        ) / 10;
-  }
+  // devActiveTimeHours mirrors cycleDevTimeHours (last In Progress → first AI comment)
+  const devActiveTimeHours: number | null = cycleDevTimeHours;
 
   // Code Review Time: only actual review statuses (not changesRequested/rework)
   const codeReviewTimeHours = sumDurationsForStatuses(
@@ -297,12 +358,16 @@ export async function calculateLeadCycleTime(
     readyDate,
     doneDate,
     isWIP,
+    ticketToMergeHours: ticketToMergeHours || null,
     cycleTimeHours: cycleTimeHours || null,
     cycleDevTimeHours,
     pickupTimeHours,
     devActiveTimeHours,
     inProgressDate,
+    lastInProgressDate,
+    assignedToMeDate,
     reviewDate,
+    aiCommentDate,
     activeTimeHours: activeTimeHours || null,
     waitTimeHours: waitTimeHours || null,
     codeReviewTimeHours: codeReviewTimeHours || null,
@@ -350,6 +415,7 @@ export async function calculateSprintLeadCycleTime(
     sprintId,
     sprintName: `Sprint ${sprintId}`,
     leadTime: buildTimeStats(issueDetails.map((d) => d.leadTimeHours)),
+    ticketToMerge: buildTimeStats(issueDetails.map((d) => d.ticketToMergeHours)),
     cycleTime: buildTimeStats(issueDetails.map((d) => d.cycleTimeHours)),
     cycleDevTime: buildTimeStats(issueDetails.map((d) => d.cycleDevTimeHours)),
     pickupTime: buildTimeStats(issueDetails.map((d) => d.pickupTimeHours)),

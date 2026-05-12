@@ -98,7 +98,7 @@ const IAComparisonCard: React.FC<IAComparisonCardProps> = ({ projectKey, startDa
         </KPITooltip>
       </h3>
       <p className="text-xs text-gray-400 mb-4">
-        {data.ia.totalUS} US IA · {data.nonIA.totalUS} US manuelles · Confiance : {data.dataQuality.confidence}
+        {data.ia.totalUS} US Dev IA · {data.nonIA.totalUS} US Dev manuelles · Confiance : {data.dataQuality.confidence}
       </p>
 
       <table className="w-full">
@@ -123,7 +123,7 @@ const IAComparisonCard: React.FC<IAComparisonCardProps> = ({ projectKey, startDa
             ia={formatHours(data.ia.avgCycleDevTimeHours)}
             nonIA={formatHours(data.nonIA.avgCycleDevTimeHours)}
             delta={data.deltas.cycleDevTimeDeltaPercent}
-            tooltip="Temps de développement pur (Ready → In Review)."
+            tooltip="Temps de développement pur : dernier 'In Progress' → premier commentaire IA/MR (jours ouvrés)."
           />
           <MetricRow
             label="Pickup Time"
@@ -137,7 +137,7 @@ const IAComparisonCard: React.FC<IAComparisonCardProps> = ({ projectKey, startDa
             ia={formatHours(data.ia.avgDevActiveTimeHours)}
             nonIA={formatHours(data.nonIA.avgDevActiveTimeHours)}
             delta={data.deltas.devActiveTimeDeltaPercent}
-            tooltip="Temps de codage pur (In Progress → In Review)."
+            tooltip="Temps de codage actif : dernier 'In Progress' → premier commentaire IA/MR (identique au Cycle Dev)."
           />
           <MetricRow
             label="Itérations MR"

@@ -155,10 +155,33 @@ export interface JiraSprintResult {
 // Excluded issue types for KPI calculations
 const EXCLUDED_ISSUE_TYPES_LOWER = ['bug', 'bogue', 'sub-task', 'sous-tache', 'sous-tâche', 'epopée', 'epic'] as const;
 
+// Non-dev issue types excluded from KPI boards (test, functional, recette…)
+// Configurable via JIRA_NON_DEV_ISSUE_TYPES env var (comma-separated)
+const DEFAULT_NON_DEV_TYPES = [
+  'test', 'test execution', 'test case', 'test plan', 'test set',
+  'recette', 'cas de test', 'plan de test',
+  'functional', 'fonctionnel', 'fonctionnelle',
+  'requirement', 'exigence',
+] as const;
+
+function getNonDevIssueTypes(): string[] {
+  const envTypes = process.env.JIRA_NON_DEV_ISSUE_TYPES;
+  if (envTypes) {
+    return envTypes.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  }
+  return [...DEFAULT_NON_DEV_TYPES];
+}
+
 export function isExcludedIssueType(typeName: string): boolean {
   return (EXCLUDED_ISSUE_TYPES_LOWER as readonly string[]).includes(typeName.toLowerCase());
 }
 
+function isNonDevIssueType(typeName: string): boolean {
+  return getNonDevIssueTypes().includes(typeName.toLowerCase());
+}
+
 export function isUserStory(issue: JiraIssue): boolean {
-  return !isExcludedIssueType(issue.fields.issuetype.name) && !issue.fields.issuetype.subtask;
+  return !isExcludedIssueType(issue.fields.issuetype.name)
+    && !isNonDevIssueType(issue.fields.issuetype.name)
+    && !issue.fields.issuetype.subtask;
 }

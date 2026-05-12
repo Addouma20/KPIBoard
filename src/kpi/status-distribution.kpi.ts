@@ -1,6 +1,7 @@
 import { JiraClient } from '../clients/jira-client';
 import {
   isDoneStatus,
+  isCancelledStatus,
   isInProgressStatus,
   isReviewStatus,
   isBlockedStatus,
@@ -13,6 +14,7 @@ import type { Result } from '../types/result.types';
 import { success } from '../types/result.types';
 
 function categorize(statusName: string): StatusCount['category'] {
+  if (isCancelledStatus(statusName)) return 'cancelled';
   if (isDoneStatus(statusName)) return 'done';
   if (isReviewStatus(statusName)) return 'review';
   if (isInProgressStatus(statusName)) return 'in_progress';
@@ -38,7 +40,7 @@ function buildDistribution(stories: JiraIssue[], periodLabel: string): StatusDis
     .map(([status, { category, count }]) => ({ status, category, count }))
     .sort((a, b) => b.count - a.count);
 
-  const byCategoryCount = { done: 0, in_progress: 0, review: 0, todo: 0, blocked: 0, other: 0 };
+  const byCategoryCount = { done: 0, in_progress: 0, review: 0, todo: 0, blocked: 0, cancelled: 0, other: 0 };
   for (const s of statuses) {
     byCategoryCount[s.category] += s.count;
   }

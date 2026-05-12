@@ -7,7 +7,7 @@
 import { JiraClient } from '../clients/jira-client';
 import { isUserStory } from '../types/jira.types';
 import { isDoneStatus } from '../config/workflow-statuses.config';
-import { calculateLeadCycleTime } from './lead-cycle-time.kpi';
+import { calculateLeadCycleTime, DEFAULT_OPTIONS } from './lead-cycle-time.kpi';
 import { calculateMRIterations } from './mr-iterations.kpi';
 import type { JiraIssue, JiraChangelogHistory } from '../types/jira.types';
 import type {
@@ -215,12 +215,19 @@ export async function calculateKanbanMRIterations(
     ? Math.round((distribution.oneIteration / totalWithReview) * 1000) / 10
     : null;
 
+  // KPI 2 — Indice de Rework : allers-retours = iterationsCount - 1 (0 = premier coup)
+  const reworkCounts = validCounts.map((c) => Math.max(0, c - 1));
+  const totalReworkCount = reworkCounts.reduce((a, b) => a + b, 0);
+  const averageReworkCount = reworkCounts.length > 0 ? round1(totalReworkCount / reworkCounts.length) : null;
+
   return success({
     sprintId: 0,
     sprintName: periodLabel,
     averageIterations: validCounts.length > 0 ? round1(validCounts.reduce((a, b) => a + b, 0) / validCounts.length) : null,
     medianIterations: median(validCounts) !== null ? round1(median(validCounts)!) : null,
     maxIterations: validCounts.length > 0 ? Math.max(...validCounts) : null,
+    averageReworkCount,
+    totalReworkCount: reworkCounts.length > 0 ? totalReworkCount : null,
     distribution,
     firstTimeRightPercent,
     issueDetails,
@@ -235,7 +242,7 @@ export async function calculateKanbanLeadCycleTime(
   jiraClient: JiraClient,
   stories: JiraIssue[],
   periodLabel: string,
-  aiMode = false,
+  isIA = false,
 ): Promise<Result<SprintLeadCycleTimeResult>> {
   // MT5: Prefetch all changelogs in a single batch request to avoid N+1
   if (stories.length > 0) {
@@ -244,27 +251,8 @@ export async function calculateKanbanLeadCycleTime(
     await jiraClient.getIssuesWithChangelogByJQL(batchJql, `batch-changelog:${keys.join(',')}`);
   }
 
-  // In AI mode, fetch the first AI comment date per issue to use as cycleDevTime end point
-  const aiCommentDates: Map<string, string | null> = new Map();
-  if (aiMode) {
-    const dateResults = await Promise.all(
-      stories.map(async (s) => ({
-        key: s.key,
-        date: await jiraClient.findFirstAICommentDate(s.key),
-      })),
-    );
-    for (const { key, date } of dateResults) {
-      aiCommentDates.set(key, date);
-    }
-  }
-
   const issueResults = await Promise.all(
-    stories.map((s) => calculateLeadCycleTime(
-      jiraClient,
-      s.key,
-      undefined,
-      aiMode ? (aiCommentDates.get(s.key) ?? null) : undefined,
-    )),
+    stories.map((s) => calculateLeadCycleTime(jiraClient, s.key, { ...DEFAULT_OPTIONS, isIA })),
   );
 
   const issueDetails = issueResults
@@ -272,6 +260,7 @@ export async function calculateKanbanLeadCycleTime(
     .map((r) => (r as Extract<typeof r, { success: true }>).data);
 
   const leadValues = issueDetails.filter((d) => d.leadTimeHours !== null).map((d) => d.leadTimeHours!);
+  const ticketToMergeValues = issueDetails.filter((d) => d.ticketToMergeHours !== null).map((d) => d.ticketToMergeHours!);
   const cycleValues = issueDetails.filter((d) => d.cycleTimeHours !== null).map((d) => d.cycleTimeHours!);
   const cycleDevValues = issueDetails.filter((d) => d.cycleDevTimeHours !== null).map((d) => d.cycleDevTimeHours!);
   const pickupValues = issueDetails.filter((d) => d.pickupTimeHours !== null).map((d) => d.pickupTimeHours!);
@@ -282,6 +271,7 @@ export async function calculateKanbanLeadCycleTime(
     sprintId: 0,
     sprintName: periodLabel,
     leadTime: timeStats(leadValues),
+    ticketToMerge: timeStats(ticketToMergeValues),
     cycleTime: timeStats(cycleValues),
     cycleDevTime: timeStats(cycleDevValues),
     pickupTime: timeStats(pickupValues),
@@ -383,9 +373,9 @@ export async function calculateKanbanBugs(
     severityDistribution.minor += detail.bugsBySeverity.minor;
   }
 
-  const doneUSCount = userStories.filter((us) => isDoneStatus(us.fields.status.name)).length;
-  const bugsPerUSRatio = doneUSCount > 0 ? totalBugs / doneUSCount : null;
-  const activeBugsPerUSRatio = doneUSCount > 0 ? totalActiveBugs / doneUSCount : null;
+  const totalUSCount = userStories.length;
+  const bugsPerUSRatio = totalUSCount > 0 ? totalBugs / totalUSCount : null;
+  const activeBugsPerUSRatio = totalUSCount > 0 ? totalActiveBugs / totalUSCount : null;
 
   const topBuggyUS = [...issueDetails].sort((a, b) => b.totalBugs - a.totalBugs).slice(0, 5);
 

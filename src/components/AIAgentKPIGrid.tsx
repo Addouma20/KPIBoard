@@ -88,22 +88,6 @@ const AIAgentKPIGrid: React.FC<AIAgentKPIGridProps> = (props) => {
 
   return (
     <div className="space-y-6">
-      {/* Banner */}
-      <div className="flex items-center gap-3 rounded-lg border border-purple-200 bg-purple-50 px-4 py-3 text-sm text-purple-800">
-        <span className="text-xl">🤖</span>
-        <div>
-          <span className="font-semibold">US travaillées par l'agent IA</span>
-          {data && (
-            <span className="ml-2 text-purple-600">
-              — {issueCount !== null ? `${issueCount} US détectées` : 'Analyse en cours…'}
-              {' · '}
-              <span className="italic">{data.periodLabel}</span>
-            </span>
-          )}
-          {isLoading && <span className="ml-2 italic text-purple-400">Chargement…</span>}
-        </div>
-      </div>
-
       {/* Empty state */}
       {!isLoading && data && issueCount === 0 && (
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
@@ -114,39 +98,41 @@ const AIAgentKPIGrid: React.FC<AIAgentKPIGridProps> = (props) => {
       {/* KPI cards (same layout as main view) */}
       {(isLoading || (data && issueCount !== 0)) && (
         <>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <React.Suspense fallback={<CardFallback />}>
-              <CompletionRateCard
-                data={data?.completionRate ?? null}
-                isLoading={isLoading}
-                error={data?.completionRate === null ? kpiError('completion-rate') ?? null : null}
-              />
-            </React.Suspense>
-            <React.Suspense fallback={<CardFallback />}>
-              <MRIterationsCard
-                data={data?.mrIterations ?? null}
-                isLoading={isLoading}
-                error={data?.mrIterations === null ? kpiError('mr-iterations') ?? null : null}
-              />
-            </React.Suspense>
-          </div>
+          {/* Card 1: Completion Rate */}
+          <React.Suspense fallback={<CardFallback />}>
+            <CompletionRateCard
+              data={data?.completionRate ?? null}
+              isLoading={isLoading}
+              error={data?.completionRate === null ? kpiError('completion-rate') ?? null : null}
+            />
+          </React.Suspense>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <React.Suspense fallback={<CardFallback />}>
-              <LeadCycleTimeCard
-                data={data?.leadCycleTime ?? null}
-                isLoading={isLoading}
-                error={data?.leadCycleTime === null ? kpiError('lead-cycle-time') ?? null : null}
-              />
-            </React.Suspense>
-            <React.Suspense fallback={<CardFallback />}>
-              <BugsPerUSCard
-                data={data?.bugs ?? null}
-                isLoading={isLoading}
-                error={data?.bugs === null ? kpiError('bugs') ?? null : null}
-              />
-            </React.Suspense>
-          </div>
+          {/* Card 2: MR Iterations */}
+          <React.Suspense fallback={<CardFallback />}>
+            <MRIterationsCard
+              data={data?.mrIterations ?? null}
+              isLoading={isLoading}
+              error={data?.mrIterations === null ? kpiError('mr-iterations') ?? null : null}
+            />
+          </React.Suspense>
+
+          {/* Card 3: Lead Time */}
+          <React.Suspense fallback={<CardFallback />}>
+            <LeadCycleTimeCard
+              data={data?.leadCycleTime ?? null}
+              isLoading={isLoading}
+              error={data?.leadCycleTime === null ? kpiError('lead-cycle-time') ?? null : null}
+            />
+          </React.Suspense>
+
+          {/* Card 4: Bugs */}
+          <React.Suspense fallback={<CardFallback />}>
+            <BugsPerUSCard
+              data={data?.bugs ?? null}
+              isLoading={isLoading}
+              error={data?.bugs === null ? kpiError('bugs') ?? null : null}
+            />
+          </React.Suspense>
         </>
       )}
     </div>

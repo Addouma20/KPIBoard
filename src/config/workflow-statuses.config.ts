@@ -7,14 +7,34 @@ function lowerList(envVar: string | undefined, defaults: string[]): string[] {
   return raw.map(s => s.toLowerCase());
 }
 
+// True completions only — cancelled work is tracked separately via CANCELLED_STATUSES
 export const DONE_STATUSES = lowerList(
   process.env.JIRA_DONE_STATUSES,
-  ['done', 'closed', 'resolved', 'released', 'ready for delivery', 'terminé', 'terminée', 'fermé', 'clôturé', 'clôturée', 'prêt pour livraison']
+  [
+    'done', 'closed', 'resolved', 'released', 'terminé', 'terminée', 'fermé', 'fermée',
+    'livré', 'livrée', 'deployed', 'déployé', 'merged', 'fusionné', 'fusionnée',
+  ]
+);
+
+// Cancelled/rejected work — excluded from KPI calculations (not the same as "Done")
+export const CANCELLED_STATUSES = lowerList(
+  process.env.JIRA_CANCELLED_STATUSES,
+  [
+    'cancelled', 'annulé', 'annulée', 'abandonné', 'abandonnée', 'clôturé', 'clôturée',
+    'rejeté', 'rejetée', "won't do", 'obsolete', "won't fix", 'duplicate',
+  ]
 );
 
 export const IN_PROGRESS_STATUSES = lowerList(
   process.env.JIRA_IN_PROGRESS_STATUSES,
-  ['in progress', 'in development', 'en cours', 'test in progress', 'prêt pour test']
+  [
+    'in progress', 'in development', 'en cours', 'en développement', 'en developpement',
+    'test in progress', 'test en cours', 'tests en cours', 'en test', 'in testing', 'in qa',
+    'prêt pour test', 'pret pour test', 'prêt pour livraison', 'pret pour livraison',
+    'ready for delivery', 'en revue', 'in review', 'validation', 'en validation',
+    'en cours de développement', 'en cours de developpement',
+    'recette en cours', 'en recette',
+  ]
 );
 
 export const TODO_STATUSES = lowerList(
@@ -30,7 +50,12 @@ export const READY_STATUSES = lowerList(
 export const REVIEW_STATUSES = {
   inReview: lowerList(
     process.env.JIRA_REVIEW_STATUSES,
-    ['in review', 'code review', 'peer review', 'à valider', 'a valider', 'en revue']
+    [
+      'in review', 'code review', 'peer review', 'à valider', 'a valider', 'en revue',
+      'à valider', 'a tester', 'à tester', 'tests ok', 'test ok', 'validé', 'valide',
+      'prêt pour validation', 'pret pour validation', 'ready for review',
+      'en attente de validation', 'en attente de test',
+    ]
   ),
   changesRequested: lowerList(
     process.env.JIRA_CHANGES_REQUESTED_STATUSES,
@@ -64,10 +89,14 @@ export const BUG_SEVERITY_WEIGHTS: Record<BugSeverity, number> = {
   minor: 1,
 };
 
-export const BUG_RESOLVED_STATUSES = ['done', 'resolved', 'closed', 'fixed', "won't fix", 'clôturé', 'clôturée'];
+export const BUG_RESOLVED_STATUSES = ['done', 'resolved', 'closed', 'fixed', "won't fix", 'clôturé', 'clôturée', 'abandonné', 'abandonné', 'terminé', 'fermé'];
 
 export function isDoneStatus(status: string): boolean {
   return DONE_STATUSES.includes(status.toLowerCase());
+}
+
+export function isCancelledStatus(status: string): boolean {
+  return CANCELLED_STATUSES.includes(status.toLowerCase());
 }
 
 export function isInProgressStatus(status: string): boolean {

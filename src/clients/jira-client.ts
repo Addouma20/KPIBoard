@@ -23,6 +23,16 @@ const DEFAULT_AI_MARKERS = [
   'copilot',
   'automated implementation',
   'code généré par IA',
+  // MR / merge request short forms
+  'MR:',
+  'MR :',
+  // Implementation completion indicators
+  'implementation terminee',
+  'implémentation terminée',
+  'implementation terminée',
+  'implémentation terminee',
+  'implémentation complète',
+  'implementation complete',
   // Automated MR / CI-CD bot patterns
   'Merge Request',
   'merge request',
@@ -107,7 +117,13 @@ export class JiraClient {
     } catch (err) {
       if (err instanceof AxiosError) {
         const status = err.response?.status ?? 0;
-        const msg = err.response?.data?.errorMessages?.[0] ?? err.message;
+        const data = err.response?.data;
+        const msg =
+          data?.errorMessages?.[0] ??
+          data?.message ??
+          (typeof data === 'string' ? data : undefined) ??
+          err.message;
+        console.error(`[JiraClient] HTTP ${status} on ${path}:`, msg);
         return fromHttpStatus(status, msg);
       }
       return failure('NETWORK_ERROR', String(err));
@@ -158,7 +174,8 @@ export class JiraClient {
       `boards:${key}`
     );
     if (!result.success) return result;
-    return success(result.data.values);
+    // `values` may be undefined if the project has no boards
+    return success(result.data.values ?? []);
   }
 
   // --- Sprints ---

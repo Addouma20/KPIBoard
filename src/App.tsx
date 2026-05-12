@@ -10,15 +10,20 @@ const App: React.FC = () => {
   const [userName, setUserName] = useState('');
   const [projectKey, setProjectKey] = useState('');
 
-  // Check auth status on mount — auto-skip login if env token works
+  // Check auth status on mount — auto-skip login/project-select if env token + project key work
   useEffect(() => {
     const checkStatus = async () => {
       try {
         const res = await fetch('/api/auth/status');
         if (res.ok) {
-          const data: { connected: boolean; user?: string } = await res.json();
-          if (data.connected && data.user) {
-            setUserName(data.user);
+          const data: { connected: boolean; user?: string; projectKey?: string } = await res.json();
+          if (data.connected) {
+            if (data.user) setUserName(data.user);
+            if (data.projectKey) {
+              setProjectKey(data.projectKey);
+              setStep('dashboard');
+              return;
+            }
             setStep('project-select');
             return;
           }
@@ -37,6 +42,11 @@ const App: React.FC = () => {
   const handleProjectSelected = (key: string) => {
     setProjectKey(key);
     setStep('dashboard');
+  };
+
+  const handleChangeProject = () => {
+    setProjectKey('');
+    setStep('project-select');
   };
 
   const handleDisconnect = () => {
@@ -72,6 +82,7 @@ const App: React.FC = () => {
       userName={userName}
       projectKey={projectKey}
       onDisconnect={handleDisconnect}
+      onChangeProject={handleChangeProject}
     />
   );
 };

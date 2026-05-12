@@ -157,12 +157,19 @@ export async function calculateSprintMRIterations(
     ? Math.round((distribution.oneIteration / totalWithReview) * 1000) / 10
     : null;
 
+  // KPI 2 — Indice de Rework : allers-retours = iterationsCount - 1 (0 = premier coup)
+  const reworkCounts = availableCounts.map((c) => Math.max(0, c - 1));
+  const totalReworkCount = reworkCounts.reduce((a, b) => a + b, 0);
+  const averageReworkCount = reworkCounts.length > 0 ? average(reworkCounts) : null;
+
   return success({
     sprintId,
     sprintName,
     averageIterations: average(availableCounts),
     medianIterations: median(availableCounts),
     maxIterations: max(availableCounts),
+    averageReworkCount,
+    totalReworkCount: reworkCounts.length > 0 ? totalReworkCount : null,
     distribution,
     firstTimeRightPercent,
     issueDetails,

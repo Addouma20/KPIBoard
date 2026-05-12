@@ -79,7 +79,7 @@ const BugsPerUSCard: React.FC<BugsPerUSCardProps> = ({ data, isLoading, error })
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[220px] flex flex-col">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"Ratio du nombre de bugs liés rapporté au nombre d'US du sprint.\n\nFormule : Total Bugs / Total US\n\nLes bugs sont classés par sévérité :\n• Blocker (critique bloquant)\n• Critical (impact majeur)\n• Major (impact modéré)\n• Minor (impact faible)\n\nDistingue bugs actifs (ouverts) et résolus."}>
+        <KPITooltip text={"Ratio du nombre de bugs liés rapporté au nombre d'US Dev du sprint.\n\nFormule : Total Bugs / Total US Dev\n\nLes bugs sont classés par sévérité :\n• Blocker (critique bloquant)\n• Critical (impact majeur)\n• Major (impact modéré)\n• Minor (impact faible)\n\nDistingue bugs actifs (ouverts) et résolus."}>
           🐛 Bugs par US
         </KPITooltip>
       </h3>

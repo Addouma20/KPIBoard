@@ -4,7 +4,6 @@ import SprintSelector from './SprintSelector';
 import DateRangeSelector from './DateRangeSelector';
 import KPIGrid from './KPIGrid';
 import KanbanKPIGrid from './KanbanKPIGrid';
-import AIAgentKPIGrid from './AIAgentKPIGrid';
 
 type BoardMode = 'scrum' | 'kanban';
 
@@ -22,6 +21,7 @@ interface DashboardProps {
   userName: string;
   projectKey: string;
   onDisconnect: () => void;
+  onChangeProject: () => void;
 }
 
 function defaultDateRange(): { startDate: string; endDate: string } {
@@ -43,10 +43,9 @@ const INITIAL_STATE: DashboardState = {
   error: null,
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnect }) => {
+const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnect, onChangeProject }) => {
   const [state, setState] = useState<DashboardState>(INITIAL_STATE);
   const [refreshing, setRefreshing] = useState(false);
-  const [view, setView] = useState<'global' | 'ai-agent'>('global');
   const { startDate: defaultStart, endDate: defaultEnd } = defaultDateRange();
   const [kanbanStartDate, setKanbanStartDate] = useState(defaultStart);
   const [kanbanEndDate, setKanbanEndDate] = useState(defaultEnd);
@@ -55,7 +54,15 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
       const boardsRes = await fetch('/api/kpi/boards');
-      if (!boardsRes.ok) throw new Error(`Erreur chargement boards (${boardsRes.status})`);
+      if (!boardsRes.ok) {
+        let detail = `Erreur chargement boards (${boardsRes.status})`;
+        try {
+          const body = await boardsRes.json();
+          if (body?.error?.message) detail += ` — ${body.error.message}`;
+          else if (body?.error) detail += ` — ${JSON.stringify(body.error)}`;
+        } catch { /* ignore parse error */ }
+        throw new Error(detail);
+      }
       const boards: JiraBoard[] = await boardsRes.json();
 
       if (boards.length === 0) {
@@ -154,7 +161,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 lg:px-8">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-5 lg:px-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Jira KPI Dashboard</h1>
             <p className="text-sm text-gray-400 mt-0.5">
@@ -232,6 +239,14 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
             </button>
             <button
               type="button"
+              onClick={onChangeProject}
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600
+                         hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+            >
+              Changer de projet
+            </button>
+            <button
+              type="button"
               onClick={onDisconnect}
               className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600
                          hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
@@ -243,7 +258,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
       </header>
 
       {/* Main content */}
-      <main className="mx-auto max-w-6xl px-6 py-8 lg:px-8">
+      <main className="mx-auto max-w-[1600px] px-6 py-8 lg:px-8">
         {/* Error banner */}
         {state.error && (
           <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -260,58 +275,36 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
         )}
 
         {!state.loading && (state.boardMode === 'kanban' || state.selectedSprintId !== null) && (
-          <>
-            {/* View tabs */}
-            <div className="mb-6 flex gap-1 rounded-xl border border-gray-200 bg-white p-1 w-fit shadow-sm">
-              <button
-                type="button"
-                onClick={() => setView('global')}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  view === 'global'
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Vue globale
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('ai-agent')}
-                className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                  view === 'ai-agent'
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                🤖 Agent IA
-              </button>
-            </div>
-
-            {/* Global view */}
-            {view === 'global' && state.boardMode === 'scrum' && state.selectedSprintId !== null && (
-              <KPIGrid sprintId={state.selectedSprintId} boardId={state.selectedBoardId} />
+          <div className="space-y-6">
+            {/* Période analysée (Kanban) */}
+            {state.boardMode === 'kanban' && (
+              <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                Période analysée : <span className="font-medium">{kanbanStartDate} → {kanbanEndDate}</span>
+              </div>
             )}
-            {view === 'global' && state.boardMode === 'kanban' && (
+
+            {state.boardMode === 'scrum' && state.selectedSprintId !== null && (() => {
+              const sprint = state.sprints.find((s) => s.id === state.selectedSprintId);
+              const startDate = sprint?.startDate?.slice(0, 10) ?? '';
+              const endDate = sprint?.endDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
+              return (
+                <KPIGrid
+                  sprintId={state.selectedSprintId}
+                  boardId={state.selectedBoardId}
+                  projectKey={projectKey}
+                  startDate={startDate}
+                  endDate={endDate}
+                />
+              );
+            })()}
+            {state.boardMode === 'kanban' && (
               <KanbanKPIGrid
                 projectKey={projectKey}
                 startDate={kanbanStartDate}
                 endDate={kanbanEndDate}
               />
             )}
-
-            {/* AI Agent view */}
-            {view === 'ai-agent' && state.boardMode === 'scrum' && state.selectedSprintId !== null && (
-              <AIAgentKPIGrid mode="scrum" sprintId={state.selectedSprintId} />
-            )}
-            {view === 'ai-agent' && state.boardMode === 'kanban' && (
-              <AIAgentKPIGrid
-                mode="kanban"
-                projectKey={projectKey}
-                startDate={kanbanStartDate}
-                endDate={kanbanEndDate}
-              />
-            )}
-          </>
+          </div>
         )}
 
         {/* Empty state — Scrum only */}

@@ -305,9 +305,9 @@ export async function calculateSprintBugs(
     severityDistribution.minor += detail.bugsBySeverity.minor;
   }
 
-  const doneUSCount = userStories.filter(us => isDoneStatus(us.fields.status.name)).length;
-  const bugsPerUSRatio = doneUSCount > 0 ? totalBugs / doneUSCount : null;
-  const activeBugsPerUSRatio = doneUSCount > 0 ? totalActiveBugs / doneUSCount : null;
+  const totalUSCount = userStories.length;
+  const bugsPerUSRatio = totalUSCount > 0 ? totalBugs / totalUSCount : null;
+  const activeBugsPerUSRatio = totalUSCount > 0 ? totalActiveBugs / totalUSCount : null;
 
   // Top 5 buggiest US
   const topBuggyUS = [...issueDetails]

@@ -108,7 +108,7 @@ const SprintTrendCard: React.FC<SprintTrendCardProps> = ({ boardId }) => {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[320px] flex flex-col">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"Évolution des temps sur les 10 derniers sprints.\n\n• Lead Time (j) — délai de livraison (À faire → Done)\n• Cycle Dev (j) — temps de dév (À faire → In Review)\n\nTous les temps sont en jours ouvrés."}>
+        <KPITooltip text={"Évolution des temps sur les 10 derniers sprints.\n\n• Lead Time (j) — délai de livraison (À faire → Done)\n• Cycle Dev (j) — temps de dév actif (Dernier In Progress → 1er commentaire IA/MR)\n\nTous les temps sont en jours ouvrés."}>
           📈 Tendances KPI
         </KPITooltip>
       </h3>

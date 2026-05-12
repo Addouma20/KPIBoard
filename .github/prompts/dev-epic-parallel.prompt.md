@@ -1,9 +1,11 @@
-# Developper les EPICs KPI en parallele
-
 ---
-description: Lance le developpement de toutes les US des specs/ en parallele via subagents
+name: "Developper les EPICs KPI en parallele"
+description: "Lance le developpement de toutes les US des specs/ en parallele via subagents"
 mode: agent
+tools: [read_file, create_file, run_terminal_command, semantic_search]
 ---
+
+# Developper les EPICs KPI en parallele
 
 Tu es le chef d'orchestre du projet **Jira KPI Dashboard**.
 Ton role : lancer le developpement de chaque EPIC depuis `specs/` en parallele.

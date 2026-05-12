@@ -29,7 +29,11 @@ const USLeadTimeTable: React.FC<USLeadTimeTableProps> = ({ issueDetails, jiraBas
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [filter, setFilter] = useState<'all' | 'done' | 'wip'>('all');
 
-  const filtered = issueDetails.filter((d) => {
+  // Only show US with a computed cycleDevTime — others are excluded from display and KPI calculations
+  const withCycleDev = issueDetails.filter((d) => d.cycleDevTimeHours !== null);
+  const hiddenCount = issueDetails.length - withCycleDev.length;
+
+  const filtered = withCycleDev.filter((d) => {
     if (filter === 'done') return !d.isWIP;
     if (filter === 'wip') return d.isWIP;
     return true;
@@ -86,9 +90,9 @@ const USLeadTimeTable: React.FC<USLeadTimeTableProps> = ({ issueDetails, jiraBas
                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
             }`}
           >
-            {f === 'all' ? `Toutes (${issueDetails.length})` : ''}
-            {f === 'done' ? `Done (${issueDetails.filter((d) => !d.isWIP).length})` : ''}
-            {f === 'wip' ? `WIP (${issueDetails.filter((d) => d.isWIP).length})` : ''}
+            {f === 'all' ? `Toutes (${withCycleDev.length})` : ''}
+            {f === 'done' ? `Done (${withCycleDev.filter((d) => !d.isWIP).length})` : ''}
+            {f === 'wip' ? `WIP (${withCycleDev.filter((d) => d.isWIP).length})` : ''}
           </button>
         ))}
       </div>
@@ -172,9 +176,14 @@ const USLeadTimeTable: React.FC<USLeadTimeTableProps> = ({ issueDetails, jiraBas
       </div>
 
       {/* Summary */}
-      <div className="mt-2 flex gap-4 text-xs text-gray-400">
+      <div className="mt-2 flex gap-4 text-xs text-gray-400 flex-wrap">
         <span>{sorted.length} US affichées</span>
-        <span>Lead Time = À faire → Terminé · Cycle Dev = En cours → À valider (heures ouvrées 9h-18h)</span>
+        {hiddenCount > 0 && (
+          <span className="text-amber-500">
+            ⚠ {hiddenCount} US masquée{hiddenCount > 1 ? 's' : ''} (Cycle Dev Time non calculable)
+          </span>
+        )}
+        <span>Lead Time = À faire → Terminé · Cycle Dev = Assigné (IA) ou 1er In Progress (humain) → fin dev (heures ouvrées 9h-18h)</span>
       </div>
     </div>
   );

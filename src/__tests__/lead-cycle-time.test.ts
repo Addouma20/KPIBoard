@@ -34,7 +34,30 @@ function makeHistory(
   };
 }
 
-function makeIssue(
+function makeAssigneeHistory(
+  id: string,
+  created: string,
+  toAccountId: string,
+  toDisplayName: string
+): JiraChangelogHistory {
+  return {
+    id,
+    created,
+    author: { displayName: toDisplayName, name: toDisplayName.toLowerCase(), accountId: toAccountId },
+    items: [
+      {
+        field: 'assignee',
+        fieldtype: 'jira',
+        from: null,
+        fromString: null,
+        to: toAccountId,
+        toString: toDisplayName,
+      },
+    ],
+  };
+}
+
+
   key: string,
   summary: string,
   histories: JiraChangelogHistory[]
@@ -94,6 +117,8 @@ describe('calculateLeadCycleTime', () => {
   beforeEach(() => {
     mockClient = new JiraClient() as JiraClient;
     vi.clearAllMocks();
+    // Default: no AI comment found (cycleDevTimeHours = null unless overridden per test)
+    vi.spyOn(mockClient, 'findFirstAICommentDate').mockResolvedValue(null);
   });
 
   it('calculates correct Lead Time between Ready and Done', async () => {
@@ -121,6 +146,134 @@ describe('calculateLeadCycleTime', () => {
     expect(result.data.doneDate).toBe('2026-04-02T10:00:00.000Z');
     // Lead Time = 25 hours (Apr 1 09:00 → Apr 2 10:00)
     expect(result.data.leadTimeHours).toBe(25);
+  });
+
+  it('calculates Cycle Dev Time from self-assignment date to first AI comment', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'Ready'),
+      makeHistory('2', '2026-04-01T10:00:00.000Z', 'Ready', 'In Progress'),
+      // Dev assigns themselves the card at 09:00 on Apr 2
+      makeAssigneeHistory('3', '2026-04-02T09:00:00.000Z', 'dev-1', 'Dev User'),
+      makeHistory('4', '2026-04-02T13:00:00.000Z', 'In Progress', 'In Review'),
+      makeHistory('5', '2026-04-02T17:00:00.000Z', 'In Review', 'Done'),
+    ];
+
+    const issue = makeIssue('PROJ-CDT', 'Cycle Dev Time Test', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({
+      success: true,
+      data: issue,
+    });
+    // AI comment posted at Apr 2 11:00 (between self-assignment and In Review)
+    vi.spyOn(mockClient, 'findFirstAICommentDate').mockResolvedValue('2026-04-02T11:00:00.000Z');
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-CDT', { ...testOptions, isIA: true });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    // Assigned to me: Apr 2 09:00
+    expect(result.data.assignedToMeDate).toBe('2026-04-02T09:00:00.000Z');
+    expect(result.data.aiCommentDate).toBe('2026-04-02T11:00:00.000Z');
+    // Cycle Dev Time = Apr 2 09:00 → Apr 2 11:00 = 2 hours
+    expect(result.data.cycleDevTimeHours).toBe(2);
+    expect(result.data.devActiveTimeHours).toBe(2);
+  });
+
+  it('returns null cycleDevTimeHours when no AI comment found', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'Ready'),
+      makeHistory('2', '2026-04-01T10:00:00.000Z', 'Ready', 'In Progress'),
+      makeAssigneeHistory('3', '2026-04-01T10:30:00.000Z', 'dev-1', 'Dev User'),
+      makeHistory('4', '2026-04-01T16:00:00.000Z', 'In Progress', 'Done'),
+    ];
+
+    const issue = makeIssue('PROJ-NOAI', 'No AI comment', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({
+      success: true,
+      data: issue,
+    });
+    // findFirstAICommentDate already mocked to null in beforeEach
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-NOAI', { ...testOptions, isIA: true });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.assignedToMeDate).toBe('2026-04-01T10:30:00.000Z');
+    expect(result.data.cycleDevTimeHours).toBeNull();
+    expect(result.data.devActiveTimeHours).toBeNull();
+  });
+
+  it('returns null cycleDevTimeHours when card was never assigned (IA mode)', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'Ready'),
+      makeHistory('2', '2026-04-01T10:00:00.000Z', 'Ready', 'In Progress'),
+      makeHistory('3', '2026-04-01T16:00:00.000Z', 'In Progress', 'Done'),
+    ];
+
+    const issue = makeIssue('PROJ-NOASSIGN', 'Never assigned', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({
+      success: true,
+      data: issue,
+    });
+    vi.spyOn(mockClient, 'findFirstAICommentDate').mockResolvedValue('2026-04-01T14:00:00.000Z');
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-NOASSIGN', { ...testOptions, isIA: true });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.assignedToMeDate).toBeNull();
+    expect(result.data.cycleDevTimeHours).toBeNull();
+  });
+
+  it('calculates Cycle Dev Time for human dev: firstInProgressDate → firstInReviewDate', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'Ready'),
+      makeHistory('2', '2026-04-01T10:00:00.000Z', 'Ready', 'In Progress'),
+      // 6 hours of dev work
+      makeHistory('3', '2026-04-01T16:00:00.000Z', 'In Progress', 'In Review'),
+      makeHistory('4', '2026-04-01T20:00:00.000Z', 'In Review', 'Done'),
+    ];
+
+    const issue = makeIssue('PROJ-HUMAN', 'Human dev US', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({
+      success: true,
+      data: issue,
+    });
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-HUMAN', { ...testOptions, isIA: false });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    // Human CycleDevTime = firstInProgress (10:00) → firstInReview (16:00) = 6h
+    expect(result.data.inProgressDate).toBe('2026-04-01T10:00:00.000Z');
+    expect(result.data.reviewDate).toBe('2026-04-01T16:00:00.000Z');
+    expect(result.data.cycleDevTimeHours).toBe(6);
+  });
+
+  it('returns null cycleDevTimeHours for human dev when no In Review transition', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'Ready'),
+      makeHistory('2', '2026-04-01T10:00:00.000Z', 'Ready', 'In Progress'),
+      // Goes directly to Done (no review)
+      makeHistory('3', '2026-04-01T16:00:00.000Z', 'In Progress', 'Done'),
+    ];
+
+    const issue = makeIssue('PROJ-HUMAN-NOREV', 'Human no review', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({
+      success: true,
+      data: issue,
+    });
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-HUMAN-NOREV', { ...testOptions, isIA: false });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.reviewDate).toBeNull();
+    expect(result.data.cycleDevTimeHours).toBeNull();
   });
 
   it('returns isWIP=true if US not Done', async () => {

@@ -9,7 +9,7 @@ import { calculateKanbanAllKPIs, calculateKanbanDevRanking } from '../kpi/kanban
 import { calculateStatusDistribution, calculateKanbanStatusDistribution } from '../kpi/status-distribution.kpi';
 import { calculateKanbanTrend } from '../kpi/kanban-trend.kpi';
 import { generateAllInsights } from '../kpi/insights';
-import { calculateIAComparison, calculateROIMetrics } from '../kpi/ia-comparison.kpi';
+import { calculateIAComparison, calculateROIMetrics, calculateIAUSDetails } from '../kpi/ia-comparison.kpi';
 import { isUserStory } from '../types/jira.types';
 import type { Result } from '../types';
 
@@ -427,6 +427,25 @@ router.get('/ia-comparison', async (req: Request, res: Response) => {
 
   const result = await calculateIAComparison(
     getClient(), params.projectKey, params.startDate, params.endDate,
+  );
+  sendResult(res, result);
+});
+
+// --- IA vs Non-IA US Details ---
+
+router.get('/ia-us-details', async (req: Request, res: Response) => {
+  const sprintId = Number(req.query.sprintId);
+  if (sprintId && !isNaN(sprintId)) {
+    const result = await calculateIAUSDetails(getClient(), { sprintId });
+    sendResult(res, result);
+    return;
+  }
+
+  const params = requireDateRange(req, res);
+  if (!params) return;
+
+  const result = await calculateIAUSDetails(
+    getClient(), { projectKey: params.projectKey, startDate: params.startDate, endDate: params.endDate },
   );
   sendResult(res, result);
 });

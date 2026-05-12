@@ -136,7 +136,7 @@ const DevRankingCard: React.FC<DevRankingCardProps> = ({ sprintId, projectKey, s
   if (error) {
     return (
       <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[280px]">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">🏆 Classement Dev</h3>
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">🏆 Équipe de Réalisation</h3>
         <p className="text-red-500 text-sm">{error}</p>
       </div>
     );
@@ -145,7 +145,7 @@ const DevRankingCard: React.FC<DevRankingCardProps> = ({ sprintId, projectKey, s
   if (!data || data.developers.length === 0) {
     return (
       <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[280px]">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">🏆 Classement Dev</h3>
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">🏆 Équipe de Réalisation</h3>
         <p className="text-gray-400 text-sm">Aucune donnée disponible.</p>
       </div>
     );
@@ -154,8 +154,8 @@ const DevRankingCard: React.FC<DevRankingCardProps> = ({ sprintId, projectKey, s
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[280px] flex flex-col">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"Classement des développeurs basé sur un score composite :\n\n• Lead Time (25%) — rapidité de livraison\n• Cycle Dev (20%) — temps de dév actif\n• Itérations MR (20%) — qualité du code soumis\n• Bugs/US (20%) — fiabilité\n• Complétion (15%) — US terminées\n\nScore de 0 à 100. Plus le score est élevé, meilleure est la performance globale."}>
-          🏆 Classement Développeurs
+        <KPITooltip text={"Équipe de Réalisation — score composite par développeur :\n\n• Lead Time (25%) — rapidité de livraison\n• Cycle Dev (20%) — temps de dév actif\n• Itérations MR (20%) — qualité du code soumis\n• Bugs/US (20%) — fiabilité\n• Complétion (15%) — US terminées\n\nScore de 0 à 100. Plus le score est élevé, meilleure est la performance globale."}>
+          🏆 Équipe de Réalisation
         </KPITooltip>
       </h3>
       <p className="text-xs text-gray-400 mb-4">Performance par développeur sur {isKanban ? 'la période' : 'le sprint'}</p>

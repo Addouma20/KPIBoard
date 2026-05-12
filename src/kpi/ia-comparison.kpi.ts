@@ -5,14 +5,18 @@
 import { JiraClient } from '../clients/jira-client';
 import { isUserStory } from '../types/jira.types';
 import { calculateKanbanAllKPIs } from './kanban-kpi';
+import { calculateLeadCycleTime, DEFAULT_OPTIONS } from './lead-cycle-time.kpi';
 import { generateAllInsights } from './insights';
 import { assessDataQuality } from '../utils/data-quality';
 import type {
   IAComparisonResult,
   IAComparisonMetrics,
+  IAUSDetailResult,
+  USDevDetailRow,
   ROIMetrics,
   Insight,
 } from '../types/kpi.types';
+import type { JiraIssue } from '../types/jira.types';
 import type { Result } from '../types/result.types';
 import { success } from '../types/result.types';
 
@@ -30,10 +34,16 @@ function buildMetrics(
     avgPickupTimeHours: lr?.pickupTime?.averageHours ?? null,
     avgDevActiveTimeHours: lr?.devActiveTime?.averageHours ?? null,
     avgMRIterations: mr?.averageIterations ?? null,
+    avgReworkCount: mr?.averageReworkCount ?? null,
+    totalReworkCount: mr?.totalReworkCount ?? null,
+    totalMRWithReviewData: mr
+      ? mr.distribution.oneIteration + mr.distribution.twoIterations + mr.distribution.threeOrMore
+      : null,
     bugsPerUSRatio: bugs?.bugsPerUSRatio ?? null,
     firstTimeRightPercent: mr?.firstTimeRightPercent ?? null,
     completionRatePercent: cr?.completionRatePercent ?? null,
     totalUS: cr?.totalUS ?? 0,
+    cycleDevUSCount: lr?.cycleDevTime.sampleSize ?? null,
     avgStoryPoints: null, // Available when story_points custom field is configured
   };
 }
@@ -167,5 +177,96 @@ export async function calculateROIMetrics(
     avgLeadTimeReductionPercent: avgLeadTimeReductionPercent !== null ? Math.round(avgLeadTimeReductionPercent * 10) / 10 : null,
     iaFirstTimeRightPercent: ia.firstTimeRightPercent,
     nonIAFirstTimeRightPercent: nonIA.firstTimeRightPercent,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// US-level detail for IA vs Human cards
+// ---------------------------------------------------------------------------
+
+function extractContributors(issue: JiraIssue): string[] {
+  const authors = new Set<string>();
+  if (issue.changelog?.histories) {
+    for (const h of issue.changelog.histories) {
+      const hasStatusChange = h.items.some((i) => i.field === 'status');
+      if (hasStatusChange) {
+        authors.add(h.author.displayName);
+      }
+    }
+  }
+  if (issue.fields.assignee) {
+    authors.add(issue.fields.assignee.displayName);
+  }
+  return [...authors];
+}
+
+function buildUSDetailRow(issue: JiraIssue, cycleDevTimeHours: number | null): USDevDetailRow {
+  return {
+    key: issue.key,
+    summary: issue.fields.summary,
+    status: issue.fields.status.name,
+    cycleDevTimeHours,
+    cycleDevTimeDays: cycleDevTimeHours !== null ? Math.round((cycleDevTimeHours / 9) * 10) / 10 : null,
+    storyPoints: issue.fields.story_points ?? null,
+    assignee: issue.fields.assignee?.displayName ?? 'Non assigné',
+    contributors: extractContributors(issue),
+  };
+}
+
+async function buildUSDetails(
+  jiraClient: JiraClient,
+  issues: JiraIssue[],
+  isIA: boolean,
+): Promise<USDevDetailRow[]> {
+  const stories = issues.filter(isUserStory);
+
+  const details = await Promise.all(
+    stories.map(async (issue) => {
+      const leadResult = await calculateLeadCycleTime(jiraClient, issue.key, { ...DEFAULT_OPTIONS, isIA });
+      const cycleDevTimeHours = leadResult.success ? leadResult.data.cycleDevTimeHours : null;
+      return buildUSDetailRow(issue, cycleDevTimeHours);
+    }),
+  );
+
+  return details;
+}
+
+export async function calculateIAUSDetails(
+  jiraClient: JiraClient,
+  scope: { sprintId: number } | { projectKey: string; startDate: string; endDate: string },
+): Promise<Result<IAUSDetailResult>> {
+  let allIssues: JiraIssue[];
+  let periodLabel: string;
+
+  if ('sprintId' in scope) {
+    const result = await jiraClient.getSprintIssues(scope.sprintId);
+    if (!result.success) return result;
+    allIssues = result.data;
+    periodLabel = `Sprint ${scope.sprintId}`;
+  } else {
+    const result = await jiraClient.getKanbanIssues(scope.projectKey, scope.startDate, scope.endDate);
+    if (!result.success) return result;
+    allIssues = result.data;
+    periodLabel = `${scope.startDate} → ${scope.endDate}`;
+  }
+
+  const aiIssuesResult = await jiraClient.getAIAgentIssues(
+    'sprintId' in scope ? { sprintId: scope.sprintId } : { projectKey: scope.projectKey, startDate: scope.startDate, endDate: scope.endDate },
+  );
+  if (!aiIssuesResult.success) return aiIssuesResult;
+  const aiIssueKeys = new Set(aiIssuesResult.data.map((i) => i.key));
+
+  const iaIssues = allIssues.filter((i) => aiIssueKeys.has(i.key));
+  const nonIAIssues = allIssues.filter((i) => !aiIssueKeys.has(i.key));
+
+  const [iaDetails, nonIADetails] = await Promise.all([
+    buildUSDetails(jiraClient, iaIssues, true),
+    buildUSDetails(jiraClient, nonIAIssues, false),
+  ]);
+
+  return success({
+    periodLabel,
+    iaIssues: iaDetails,
+    nonIAIssues: nonIADetails,
   });
 }

@@ -1,34 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import type {
-  USCompletionRateResult,
-  SprintMRIterationsResult,
-  SprintLeadCycleTimeResult,
-  SprintBugsResult,
-  Insight,
-} from '../types';
+import type { StatusCount } from '../types';
+import type { WorkflowKPIValues } from './kpi-cards/WorkflowStatusCard';
 
-const CompletionRateCard = React.lazy(() => import('./kpi-cards/CompletionRateCard'));
-const MRIterationsCard = React.lazy(() => import('./kpi-cards/MRIterationsCard'));
-const LeadCycleTimeCard = React.lazy(() => import('./kpi-cards/LeadCycleTimeCard'));
-const BugsPerUSCard = React.lazy(() => import('./kpi-cards/BugsPerUSCard'));
-const DevRankingCard = React.lazy(() => import('./kpi-cards/DevRankingCard'));
-const StatusDistributionCard = React.lazy(() => import('./kpi-cards/StatusDistributionCard'));
-const KanbanTrendCard = React.lazy(() => import('./kpi-cards/KanbanTrendCard'));
-const InsightsPanel = React.lazy(() => import('./kpi-cards/InsightsPanel'));
-const IAComparisonCard = React.lazy(() => import('./kpi-cards/IAComparisonCard'));
-const ROICard = React.lazy(() => import('./kpi-cards/ROICard'));
-
-interface KanbanAllKPIResponse {
-  periodLabel: string;
-  startDate: string;
-  endDate: string;
-  exportDate: string;
-  completionRate: USCompletionRateResult | null;
-  mrIterations: SprintMRIterationsResult | null;
-  leadCycleTime: SprintLeadCycleTimeResult | null;
-  bugs: SprintBugsResult | null;
-  errors: Array<{ kpi: string; error: { code: string; message: string } }>;
-}
+const WorkflowStatusCard = React.lazy(() => import('./kpi-cards/WorkflowStatusCard'));
+const KPIDevCards = React.lazy(() => import('./kpi-cards/KPIDevCards'));
 
 interface KanbanKPIGridProps {
   projectKey: string;
@@ -43,33 +18,24 @@ const CardFallback: React.FC = () => (
 );
 
 const KanbanKPIGrid: React.FC<KanbanKPIGridProps> = ({ projectKey, startDate, endDate }) => {
-  const [data, setData] = useState<KanbanAllKPIResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const [boardStatuses, setBoardStatuses] = useState<StatusCount[]>([]);
+  const [kpiValues, setKpiValues] = useState<WorkflowKPIValues | undefined>(undefined);
 
-  const fetchKPIs = useCallback(async () => {
+  const fetchStatuses = useCallback(async () => {
     if (!startDate || !endDate) return;
-
     setIsLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({ projectKey, startDate, endDate });
-      const [kpiResponse, insightsResponse] = await Promise.all([
-        fetch(`/api/kpi/all-kanban?${params}`),
-        fetch(`/api/kpi/insights?${params}`).catch(() => null),
-      ]);
-      if (!kpiResponse.ok) {
-        const body = await kpiResponse.json().catch(() => null);
-        throw new Error(body?.error?.message ?? `Erreur HTTP ${kpiResponse.status}`);
+      const res = await fetch(`/api/kpi/status-distribution-kanban?${params}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message ?? `Erreur HTTP ${res.status}`);
       }
-      const json: KanbanAllKPIResponse = await kpiResponse.json();
-      setData(json);
-
-      if (insightsResponse?.ok) {
-        const insightsJson = await insightsResponse.json();
-        setInsights(insightsJson.insights ?? []);
-      }
+      const json = await res.json();
+      setBoardStatuses(json.statuses ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
@@ -78,13 +44,8 @@ const KanbanKPIGrid: React.FC<KanbanKPIGridProps> = ({ projectKey, startDate, en
   }, [projectKey, startDate, endDate]);
 
   useEffect(() => {
-    fetchKPIs();
-  }, [fetchKPIs]);
-
-  const kpiError = (kpiName: string): string | undefined => {
-    const found = data?.errors.find((e) => e.kpi === kpiName);
-    return found ? found.error.message : undefined;
-  };
+    fetchStatuses();
+  }, [fetchStatuses]);
 
   if (error) {
     return (
@@ -96,96 +57,25 @@ const KanbanKPIGrid: React.FC<KanbanKPIGridProps> = ({ projectKey, startDate, en
 
   return (
     <div className="space-y-6">
-      {/* Period info */}
-      {data && (
-        <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-          Période analysée : <span className="font-medium">{data.periodLabel}</span>
-        </div>
-      )}
-
-      {/* Row 1: Completion Rate + MR Iterations */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <React.Suspense fallback={<CardFallback />}>
-          <CompletionRateCard
-            data={data?.completionRate ?? null}
-            isLoading={isLoading}
-            error={data?.completionRate === null ? kpiError('completion-rate') ?? null : null}
-          />
-        </React.Suspense>
-        <React.Suspense fallback={<CardFallback />}>
-          <MRIterationsCard
-            data={data?.mrIterations ?? null}
-            isLoading={isLoading}
-            error={data?.mrIterations === null ? kpiError('mr-iterations') ?? null : null}
-          />
-        </React.Suspense>
-      </div>
-
-      {/* Row 2: Lead Time + Bugs */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <React.Suspense fallback={<CardFallback />}>
-          <LeadCycleTimeCard
-            data={data?.leadCycleTime ?? null}
-            isLoading={isLoading}
-            error={data?.leadCycleTime === null ? kpiError('lead-cycle-time') ?? null : null}
-          />
-        </React.Suspense>
-        <React.Suspense fallback={<CardFallback />}>
-          <BugsPerUSCard
-            data={data?.bugs ?? null}
-            isLoading={isLoading}
-            error={data?.bugs === null ? kpiError('bugs') ?? null : null}
-          />
-        </React.Suspense>
-      </div>
-
-      {/* Row 3: Status Distribution */}
-      <React.Suspense fallback={<CardFallback />}>
-        <StatusDistributionCard
-          projectKey={projectKey}
-          startDate={startDate}
-          endDate={endDate}
-        />
-      </React.Suspense>
-
-      {/* Row 4: Dev Ranking (Kanban mode) */}
-      <React.Suspense fallback={<CardFallback />}>
-        <DevRankingCard
-          projectKey={projectKey}
-          startDate={startDate}
-          endDate={endDate}
-        />
-      </React.Suspense>
-
-      {/* Row 5: Kanban Trend (6 derniers mois) */}
-      <React.Suspense fallback={<CardFallback />}>
-        <KanbanTrendCard projectKey={projectKey} />
-      </React.Suspense>
-
-      {/* Row 6: Insights automatiques */}
-      {insights.length > 0 && (
-        <React.Suspense fallback={<CardFallback />}>
-          <InsightsPanel insights={insights} />
+      {/* Workflow du Projet — statuts réels Jira, sans regroupement */}
+      {boardStatuses.length > 0 && (
+        <React.Suspense fallback={null}>
+          <WorkflowStatusCard statuses={boardStatuses} kpiValues={kpiValues} />
         </React.Suspense>
       )}
 
-      {/* Row 7: IA vs Non-IA Comparison */}
-      <React.Suspense fallback={<CardFallback />}>
-        <IAComparisonCard
-          projectKey={projectKey}
-          startDate={startDate}
-          endDate={endDate}
-        />
-      </React.Suspense>
-
-      {/* Row 8: ROI IA */}
-      <React.Suspense fallback={<CardFallback />}>
-        <ROICard
-          projectKey={projectKey}
-          startDate={startDate}
-          endDate={endDate}
-        />
-      </React.Suspense>
+      {/* Synthèse KPIs Dev IA vs Dev Humain */}
+      {boardStatuses.length > 0 && (
+        <React.Suspense fallback={<CardFallback />}>
+          <KPIDevCards
+            projectKey={projectKey}
+            startDate={startDate}
+            endDate={endDate}
+            statuses={boardStatuses}
+            onKPIValues={setKpiValues}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 };
