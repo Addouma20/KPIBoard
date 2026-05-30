@@ -380,6 +380,8 @@ export interface USDevDetailRow {
   storyPoints: number | null;
   assignee: string;
   contributors: string[];
+  /** Nombre d'allers-retours In Review → In Progress. null = jamais passé en review. */
+  reviewBackAndForthCount: number | null;
 }
 
 export interface IAUSDetailResult {

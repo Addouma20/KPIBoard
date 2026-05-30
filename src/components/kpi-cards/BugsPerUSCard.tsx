@@ -10,10 +10,10 @@ interface BugsPerUSCardProps {
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
-  blocker: '#991b1b',
-  critical: '#ef4444',
-  major: '#f59e0b',
-  minor: '#84cc16',
+  blocker: '#CD3C14',
+  critical: '#E05E00',
+  major: '#FF7900',
+  minor: '#32C832',
 };
 
 const BugsPerUSCard: React.FC<BugsPerUSCardProps> = ({ data, isLoading, error }) => {
@@ -79,7 +79,7 @@ const BugsPerUSCard: React.FC<BugsPerUSCardProps> = ({ data, isLoading, error })
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[220px] flex flex-col">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"Ratio du nombre de bugs liés rapporté au nombre d'US Dev du sprint.\n\nFormule : Total Bugs / Total US Dev\n\nLes bugs sont classés par sévérité :\n• Blocker (critique bloquant)\n• Critical (impact majeur)\n• Major (impact modéré)\n• Minor (impact faible)\n\nDistingue bugs actifs (ouverts) et résolus."}>
+        <KPITooltip text={"KPI Bugs — Ratio bugs par US\n\nFormule : Total Bugs liés aux US du sprint / Total US du sprint (Done + WIP)\n\nUn bug est lié à une US par :\n• Lien Jira direct (inward/outward, tout type)\n• Référence à la clé US dans le titre/description\n• Même sprint + même composant\n• Sous-tâche de type Bug de l'US\nDéduplication par clé : priorité au lien le plus direct.\n\nScore pondéré par sévérité :\n• Blocker = 3 pts · Critical = 3 pts\n• Major = 2 pts · Minor = 1 pt\n\nDistingue bugs actifs (ouverts) et résolus."}>
           🐛 Bugs par US
         </KPITooltip>
       </h3>

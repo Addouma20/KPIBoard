@@ -1,1 +1,162 @@
 @import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════
+   Orange Design System — Tailwind 4 Theme Tokens
+   ═══════════════════════════════════════════════════════════ */
+@theme {
+  /* ─── Brand Colors ─── */
+  --color-orange-500: #FF7900;
+  --color-orange-600: #F16E00;
+  --color-orange-700: #E05E00;
+  --color-orange-100: #FFF0E2;
+  --color-orange-50: #FFF6ED;
+
+  /* ─── Neutral (Orange Brand Grays) ─── */
+  --color-gray-900: #000000;
+  --color-gray-800: #333333;
+  --color-gray-700: #555555;
+  --color-gray-600: #666666;
+  --color-gray-500: #999999;
+  --color-gray-400: #CCCCCC;
+  --color-gray-300: #DDDDDD;
+  --color-gray-200: #EEEEEE;
+  --color-gray-100: #F5F5F5;
+  --color-gray-50: #FAFAFA;
+
+  /* ─── Functional Colors ─── */
+  --color-success-500: #32C832;
+  --color-success-100: #E6F9E6;
+  --color-error-500: #CD3C14;
+  --color-error-100: #FCEAE6;
+  --color-warning-500: #FFCC00;
+  --color-warning-100: #FFF8D6;
+  --color-info-500: #527EDB;
+  --color-info-100: #E8EEFB;
+
+  /* ─── Typography ─── */
+  --font-sans: "Helvetica Neue", Helvetica, Arial, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ─── Radius ─── */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* ─── Shadows ─── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* ─── Base resets ─── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-gray-900);
+  background-color: var(--color-gray-100);
+  line-height: 1.5;
+}
+
+/* ─── Focus visible ring (Orange brand) ─── */
+:focus-visible {
+  outline: 2px solid var(--color-orange-500);
+  outline-offset: 2px;
+}
+
+/* ─── Skip-to-content (a11y) ─── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-orange-500);
+  color: #000;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ─── Scrollbar subtile ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-400);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   KPI Card System — Orange Harmonized
+   ═══════════════════════════════════════════════════════════ */
+
+/* Card container override — Orange shadow system */
+.rounded-2xl.border.border-gray-100.bg-white {
+  border-color: var(--color-gray-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.rounded-2xl.border.border-gray-100.bg-white:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Slate container (KPIDevCards wrapper) → use neutral gray */
+.rounded-2xl.border.border-slate-100.bg-slate-50 {
+  background-color: var(--color-gray-50);
+  border-color: var(--color-gray-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+/* Error text harmonized */
+.text-red-500 {
+  color: var(--color-error-500);
+}
+.text-red-400 {
+  color: var(--color-error-500);
+  opacity: 0.85;
+}
+
+/* Spinner harmonized */
+.border-blue-500 {
+  border-color: var(--color-orange-500);
+}
+
+/* Schema backgrounds — softer in Orange theme */
+.bg-slate-50 {
+  background-color: var(--color-gray-50);
+}
+.border-slate-100 {
+  border-color: var(--color-gray-200);
+}
+
+/* Orange KPI section label */
+.text-slate-600 {
+  color: var(--color-gray-700);
+}
+.text-slate-400 {
+  color: var(--color-gray-500);
+}
+.text-slate-700 {
+  color: var(--color-gray-800);
+}
+.border-slate-50 {
+  border-color: var(--color-gray-100);
+}

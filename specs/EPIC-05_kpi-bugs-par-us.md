@@ -11,22 +11,27 @@
 ```
 Bugs par US = Nombre d'issues de type "Bug" liées à une US
 
-Un bug est "lié" à une US si :
-  1. Il est lié via "is caused by" / "relates to" dans Jira (issue link)
+Un bug est "lié" à une US si (par ordre de priorité de déduplication) :
+  1. Il est lié via un lien Jira direct (inward ou outward, tout type)
   2. OU il référence la clé de l'US dans son titre ou sa description
-  3. OU il est dans le même sprint ET a le même composant/label que l'US
-  4. OU il est un sous-ticket de type Bug enfant de l'US (subtask)
+  3. OU il est dans le même sprint ET partage le même composant que l'US
+  4. OU il est une sous-tâche de type Bug de l'US (subtask)
 
-Taux de bugs par US = Total bugs du sprint / Total US Done du sprint
+En cas de détection par plusieurs méthodes, le lien le plus direct (1 > 2 > 3 > 4) est conservé.
+
+Taux de bugs par US = Total bugs liés aux US du sprint / Total US du sprint (Done + WIP)
 ```
 
 ### Sévérités à distinguer
 
 | Sévérité | Jira Priority | Poids |
 |----------|--------------|-------|
-| Bloquant | Blocker / Critical | 3 |
-| Majeur | Major / High | 2 |
-| Mineur | Minor / Medium / Low | 1 |
+| Blocker | Blocker, Highest | 3 |
+| Critical | Critical, High | 3 |
+| Major | Major, Medium | 2 |
+| Minor | Minor, Low, Lowest | 1 |
+
+> Note : Blocker et Critical ont le même poids (3) dans l'implémentation actuelle.
 
 ---
 

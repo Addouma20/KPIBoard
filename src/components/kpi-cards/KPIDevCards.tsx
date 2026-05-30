@@ -34,12 +34,12 @@ function rework(v: number | null): string {
 }
 
 function scoreColor(v: number | null, kpi: 'ftr' | 'rework' | 'autonomy' | 'lead'): string {
-  if (v === null) return '#9ca3af';
-  if (kpi === 'ftr')     return v >= 70 ? '#22c55e' : v >= 50 ? '#f59e0b' : '#ef4444';
-  if (kpi === 'rework')  return v <= 0.2 ? '#22c55e' : v <= 0.8 ? '#f59e0b' : '#ef4444';
-  if (kpi === 'autonomy') return v >= 70 ? '#22c55e' : v >= 40 ? '#f59e0b' : '#ef4444';
-  if (kpi === 'lead')    return v <= 3 ? '#22c55e' : v <= 7 ? '#f59e0b' : '#ef4444';
-  return '#9ca3af';
+  if (v === null) return '#999999';
+  if (kpi === 'ftr')     return v >= 70 ? '#32C832' : v >= 50 ? '#FF7900' : '#CD3C14';
+  if (kpi === 'rework')  return v <= 0.2 ? '#32C832' : v <= 0.8 ? '#FF7900' : '#CD3C14';
+  if (kpi === 'autonomy') return v >= 70 ? '#32C832' : v >= 40 ? '#FF7900' : '#CD3C14';
+  if (kpi === 'lead')    return v <= 3 ? '#32C832' : v <= 7 ? '#FF7900' : '#CD3C14';
+  return '#999999';
 }
 
 // ─── Dynamic formula builders ─────────────────────────────────────────────────
@@ -339,9 +339,6 @@ const KPIRow: React.FC<KPIRowProps> = ({ number, label, value, color, formula, t
         )}
       </div>
     </div>
-    <div className="text-[10px] text-slate-500 leading-relaxed flex flex-wrap items-center gap-0.5 pl-7">
-      {formula}
-    </div>
   </div>
 );
 
@@ -439,33 +436,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ mode, metrics, statuses, isLo
         </div>
       </div>
 
-      {/* US count stat */}
-      {metrics && (
-        <div
-          className="flex items-center justify-between rounded-xl px-4 py-2.5 mb-4"
-          style={{ background: `${borderColor}10`, border: `1px solid ${borderColor}25` }}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-base">📋</span>
-            <span className="text-xs font-medium text-slate-600">US Dev</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className="text-2xl font-extrabold tabular-nums"
-              style={{ color: borderColor }}
-            >
-              {metrics.totalUS}
-            </span>
-            {metrics.completionRatePercent !== null && (
-              <span className="text-[10px] font-medium text-slate-400 leading-tight text-right">
-                {Math.round(metrics.totalUS * metrics.completionRatePercent / 100)} terminées<br />
-                {metrics.totalUS - Math.round(metrics.totalUS * metrics.completionRatePercent / 100)} en cours
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* KPI rows */}
       {isLoading ? (
         <div className="space-y-3 animate-pulse">
@@ -532,15 +502,15 @@ const KPIDevCards: React.FC<KPIDevCardsProps> = ({ projectKey, startDate, endDat
   }, [projectKey, startDate, endDate, onKPIValues]);
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 shadow-sm">
+    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 shadow-card">
       {/* Section header */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-sm font-semibold text-slate-600">📊 Synthèse KPIs par profil</span>
-        <span className="text-[10px] text-slate-400">4 KPIs · calcul adapté aux statuts de ce projet</span>
+        <span className="text-sm font-semibold text-gray-800">📊 Synthèse KPIs par profil</span>
+        <span className="text-[10px] text-gray-500">4 KPIs · calcul adapté aux statuts de ce projet</span>
       </div>
 
       {error && (
-        <p className="text-xs text-red-400 mb-3">
+        <p className="text-xs text-error-500 mb-3">
           Données IA non disponibles — affichage sans comparaison. <span className="opacity-60">{error}</span>
         </p>
       )}

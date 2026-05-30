@@ -350,6 +350,11 @@ export async function calculateLeadCycleTime(
   const reviewInStatuses = REVIEW_STATUSES.inReview;
   const codeReviewDetails = buildCodeReviewDetails(timeline, reviewInStatuses, changesRequestedStatuses);
 
+  // Allers-retours = nombre de passes en review - 1
+  // null = jamais passé en review · 0 = first-time right · 1+ = nb de retours
+  const reviewBackAndForthCount: number | null =
+    codeReviewDetails.length === 0 ? null : codeReviewDetails.length - 1;
+
   return success({
     issueKey: issue.key,
     summary: issue.fields.summary,
@@ -376,6 +381,7 @@ export async function calculateLeadCycleTime(
     codeReviewDetails,
     statusHistory: timeline,
     storyPoints: (issue.fields.story_points as number) ?? null,
+    reviewBackAndForthCount,
   });
 }
 

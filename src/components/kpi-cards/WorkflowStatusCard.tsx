@@ -102,49 +102,13 @@ const WorkflowStatusCard: React.FC<WorkflowStatusCardProps> = ({ statuses, kpiVa
   );
   const sideStatuses = statuses.filter((s) => SIDE_CATEGORIES.includes(s.category));
 
-  // Index helpers for bracket calculation
-  // Each pill takes 1 slot; arrows are between
-  const pillIndices: { status: string; category: StatusCount['category']; index: number }[] = [];
-  pipelineStatuses.forEach((s, i) => {
-    pillIndices.push({ status: s.status, category: s.category, index: i });
-  });
-
-  // Find first/last index of each category group in the pipeline
-  function firstIndexOfCat(cat: StatusCount['category']): number {
-    const found = pillIndices.find((p) => p.category === cat);
-    return found ? found.index : -1;
-  }
-  function lastIndexOfCat(cat: StatusCount['category']): number {
-    const reversed = [...pillIndices].reverse();
-    const found = reversed.find((p) => p.category === cat);
-    return found ? found.index : -1;
-  }
-
-  const inProgressFirst = firstIndexOfCat('in_progress');
-  const reviewFirst = firstIndexOfCat('review');
-  const doneLast = lastIndexOfCat('done');
-  const total = pipelineStatuses.length;
-
-  // Bracket visibility
-  const showLeadTime = inProgressFirst >= 0 && doneLast >= 0;
-  const showCycleDevTime = inProgressFirst >= 0 && reviewFirst >= 0;
-
-  // Bracket width calculation (percentage of total slots 0..total-1)
-  // Each slot = pill (90px min) + arrow (20px) ≈ 110px. We use fractional approach.
-  function bracketLeft(startIndex: number): string {
-    return `${(startIndex / total) * 100}%`;
-  }
-  function bracketWidth(startIndex: number, endIndex: number): string {
-    return `${((endIndex - startIndex + 1) / total) * 100}%`;
-  }
-
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-card">
       {/* ── Header ── */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <span className="text-base font-semibold text-slate-700">🔄 Workflow du Projet</span>
-          <span className="text-[11px] text-slate-400 bg-slate-50 border border-slate-200 rounded-full px-2 py-0.5">
+          <span className="text-base font-semibold text-gray-800">🔄 Workflow du Projet</span>
+          <span className="text-[11px] text-gray-500 bg-gray-50 border border-gray-200 rounded-full px-2 py-0.5">
             {statuses.length} statut{statuses.length > 1 ? 's' : ''} Jira détecté{statuses.length > 1 ? 's' : ''}
           </span>
         </div>
@@ -215,89 +179,7 @@ const WorkflowStatusCard: React.FC<WorkflowStatusCardProps> = ({ statuses, kpiVa
         </div>
       )}
 
-      {/* ── Formula Legend ── */}
-      <div className="mt-5 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Lead Time */}
-        <div className="rounded-xl bg-sky-50 border border-sky-100 p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-sky-400 flex-shrink-0" />
-            <span className="text-[11px] font-bold text-sky-700">Lead Time — KPI 4 (Ticket to Merge)</span>
-          </div>
-          <div className="text-[10px] text-sky-600 leading-relaxed">
-            <div className="font-mono bg-white/70 rounded px-2 py-1 mb-1 border border-sky-100">
-              1er statut <strong>"In Progress"</strong> → <strong>"Done"</strong> (jours ouvrés)
-            </div>
-            <div>Mesure le temps total entre le début du travail de l'agent IA et la livraison finale.</div>
-            {showLeadTime && (
-              <div className="mt-1 text-sky-500">
-                Statuts In Progress : <span className="font-medium">
-                  {statuses.filter((s) => s.category === 'in_progress').map((s) => s.status).join(', ')}
-                </span>
-                <br />
-                Statuts Done : <span className="font-medium">
-                  {statuses.filter((s) => s.category === 'done').map((s) => s.status).join(', ')}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Cycle Dev Time */}
-        <div className="rounded-xl bg-purple-50 border border-purple-100 p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0" />
-            <span className="text-[11px] font-bold text-purple-700">Cycle Dev Time</span>
-          </div>
-          <div className="text-[10px] text-purple-600 leading-relaxed">
-            <div className="font-mono bg-white/70 rounded px-2 py-1 mb-1 border border-purple-100">
-              Dernier statut <strong>"In Progress"</strong> → 1er commentaire <strong>IA/MR</strong> (jours ouvrés)
-            </div>
-            <div>Mesure le temps de développement pur jusqu'à la première indication de fin de travaux IA (commentaire contenant "MR:", "implémentation terminée", "dev IA", etc.).</div>
-            {showCycleDevTime && (
-              <div className="mt-1 text-purple-500">
-                Fin détectée via commentaire Jira contenant les marqueurs IA/MR configurés.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* KPI 1 */}
-        <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-            <span className="text-[11px] font-bold text-emerald-700">KPI 1 — Taux d'Approbation (1er passage)</span>
-          </div>
-          <div className="text-[10px] text-emerald-600 leading-relaxed">
-            <div className="font-mono bg-white/70 rounded px-2 py-1 mb-1 border border-emerald-100">
-              MR fusionnées sans correction / total MR × 100
-            </div>
-            <div>% de MR approuvées du 1er coup, sans aucun retour du reviewer.</div>
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="w-2 h-2 rounded-full bg-indigo-400 flex-shrink-0" />
-            <span className="text-[11px] font-bold text-indigo-700">KPI 3 — Taux d'Autonomie (E2E)</span>
-          </div>
-          <div className="text-[10px] text-indigo-600 leading-relaxed">
-            <div className="font-mono bg-white/70 rounded px-2 py-1 mb-1 border border-indigo-100">
-              Tickets <strong>"Done"</strong> sans intervention humaine / total clos × 100
-            </div>
-            <div>
-              Seuls les statuts <strong>Done</strong> comptent (les statuts annulés/cancelled sont exclus).
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Note cancelled ── */}
-      {sideStatuses.some((s) => s.category === 'cancelled') && (
-        <div className="mt-3 text-[10px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-          ⚠️ Les statuts <strong>annulés/cancelled</strong> sont affichés hors du flux principal et exclus du calcul des KPIs (ils ne représentent pas un travail livré).
-        </div>
-      )}
     </div>
   );
 };

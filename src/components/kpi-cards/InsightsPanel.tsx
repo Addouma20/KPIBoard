@@ -13,10 +13,10 @@ const SEVERITY_ICONS: Record<string, string> = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  success: '#22c55e',
-  info: '#6b7280',
-  warning: '#f59e0b',
-  critical: '#ef4444',
+  success: '#32C832',
+  info: '#527EDB',
+  warning: '#FFCC00',
+  critical: '#CD3C14',
 };
 
 const InsightsPanel: React.FC<InsightsPanelProps> = ({ insights }) => {

@@ -10,33 +10,6 @@ interface MRIterationsCardProps {
 }
 
 /** Inline workflow schema: PR lifecycle with iteration brackets */
-const MRWorkflowSchema: React.FC = () => (
-  <div className="my-3 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-[10px] font-mono text-slate-500 overflow-x-auto">
-    <div className="flex items-center gap-0.5 whitespace-nowrap mb-1">
-      <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">MR ouverte</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">In Review</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700">Merged ✓</span>
-      <span className="text-slate-300 mx-1">|</span>
-      <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">Changes ↩</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">In Progress</span>
-      <span className="text-slate-400">→ ...</span>
-    </div>
-    <div className="flex text-[9px] text-slate-400 gap-4 mt-1 pl-1">
-      <span>
-        <span className="inline-block w-2 h-0.5 bg-green-400 mr-1 align-middle" />
-        KPI 1 : <strong className="text-green-600">Taux Approbation 1er passage</strong> = MR merged sans aucun &quot;Changes&quot;
-      </span>
-      <span>
-        <span className="inline-block w-2 h-0.5 bg-orange-400 mr-1 align-middle" />
-        KPI 2 : <strong className="text-orange-600">Indice Rework</strong> = nb moyen d&apos;allers-retours
-      </span>
-    </div>
-  </div>
-);
-
 const MRIterationsCard: React.FC<MRIterationsCardProps> = ({ data, isLoading, error }) => {
   if (isLoading) {
     return (
@@ -94,7 +67,7 @@ const MRIterationsCard: React.FC<MRIterationsCardProps> = ({ data, isLoading, er
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[220px] flex flex-col">
       {/* KPI 1: Taux d'Approbation (1er passage) — PRIMARY */}
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"KPI 1 — Taux d'Approbation (1er passage)\n% de MR fusionnées sans aucune modification demandée.\nMesure : Est-ce que le code est 'bon du premier coup' ?\n\n100% = toutes les MR approuvées sans retour.\n< 60% = l'agent produit du code qui nécessite souvent des corrections."}> 
+        <KPITooltip text={"KPI 1 — Taux d'Approbation (1er passage)\n\nFormule : US approuvées en 1 seule itération / Total US avec activité de review × 100\n\nSource (par priorité) :\n1. Champ custom Jira (customfield_iterations, configurable)\n2. Transitions changelog : In Review → Changes Requested / In Progress\n\niterationsCount = 1 → approuvé directement (first-time right)\niterationsCount = N → N-1 allers-retours\n\n100% = toutes les US approuvées sans retour.\n< 60% = le code nécessite souvent des corrections."}> 
           ✅ Taux d&apos;Approbation <span className="normal-case text-gray-300 font-normal">(1er passage)</span>
         </KPITooltip>
       </h3>
@@ -112,13 +85,10 @@ const MRIterationsCard: React.FC<MRIterationsCardProps> = ({ data, isLoading, er
       </div>
       <p className="text-[10px] text-gray-400 mb-2">MR fusionnées sans demande de modification</p>
 
-      {/* Schema */}
-      <MRWorkflowSchema />
-
       {/* KPI 2: Indice de Rework — SECONDARY */}
       <div className="rounded-xl bg-orange-50 border border-orange-100 px-4 py-3 mb-4">
         <p className="text-xs text-gray-500 mb-1">
-          <KPITooltip text={"KPI 2 — Indice de Rework (Allers-retours)\nNb moyen d'allers-retours (corrections) par MR.\n0.0 = toutes les MR approuv\u00e9es sans correction.\n1.0 = 1 cycle de corrections par MR en moyenne.\n2+ = l'agent produit souvent du code à reprendre."}>
+          <KPITooltip text={"KPI 2 — Indice de Rework\n\nFormule : Moyenne des (itérations − 1) par US avec données de review\n\niterationsCount = 1 → 0 aller-retour (first-time right)\niterationsCount = 2 → 1 aller-retour\niterationsCount = N → N-1 allers-retours\n\nDétection d'une itération :\n• In Review → Changes Requested\n• In Review → In Progress (retour en dév)\n\n0.0 = aucune correction nécessaire.\n1.0 = 1 aller-retour par MR en moyenne.\n2+ = qualité du code insuffisante."}>
             🔄 Indice de Rework
           </KPITooltip>
         </p>

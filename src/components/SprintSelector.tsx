@@ -29,7 +29,7 @@ const SprintSelector: React.FC<SprintSelectorProps> = ({
 
   return (
     <div className="flex items-center gap-3">
-      <label htmlFor="sprint-select" className="text-sm font-medium text-gray-700">
+      <label htmlFor="sprint-select" className="text-sm font-medium text-gray-300">
         Sprint
       </label>
       <select
@@ -37,8 +37,8 @@ const SprintSelector: React.FC<SprintSelectorProps> = ({
         value={selectedSprintId ?? ''}
         onChange={handleChange}
         disabled={isLoading || sprints.length === 0}
-        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm
-                   focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500
+        className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-gray-200
+                   focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30
                    disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="" disabled>
@@ -52,7 +52,7 @@ const SprintSelector: React.FC<SprintSelectorProps> = ({
         ))}
       </select>
       {isLoading && (
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" aria-hidden="true" />
       )}
     </div>
   );

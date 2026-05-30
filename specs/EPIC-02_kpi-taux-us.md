@@ -9,12 +9,18 @@
 ## Définition métier
 
 ```
-Taux de réalisation = (US en statut "Done" via workflow) / (Total US du sprint) × 100
+Taux de complétion = (US Done par workflow + US Done manuellement) / Total US du sprint × 100
 
-Reste à faire = Total US - US Done
+Taux d'autonomie E2E = US Done par workflow / Total US Done × 100
+  (= % des US closes uniquement par l'agent, sans intervention humaine)
+
+Reste à faire = Total US - doneByWorkflow - doneManually
 ```
 
-Un statut est considéré "Done via workflow" si la transition finale vers `Done` a été effectuée par le **compte de service** du workflow (non par un humain).
+Une US est "Done par workflow" si la dernière transition Jira vers un statut `Done` a été effectuée par le **compte de service** du workflow (non par un humain).
+
+> **KPI principal affiché** : Taux d’autonomie E2E (`workflowRatePercent`)
+> **KPI secondaire** : Taux de complétion (`completionRatePercent`)
 
 ---
 

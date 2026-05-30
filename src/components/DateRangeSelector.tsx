@@ -17,26 +17,28 @@ const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
 }) => {
   return (
     <div className="flex items-center gap-2">
-      <label className="text-sm text-gray-500">Du</label>
+      <label className="text-sm text-gray-300 font-medium">Du</label>
       <input
         type="date"
         value={startDate}
         onChange={(e) => onStartDateChange(e.target.value)}
         disabled={isLoading}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm
-                   focus:border-blue-500 focus:outline-none focus:ring-2
-                   focus:ring-blue-500/20 transition-colors
+        aria-label="Date de début"
+        className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-gray-200
+                   focus:border-orange-500 focus:outline-none focus:ring-2
+                   focus:ring-orange-500/30 transition-colors
                    disabled:cursor-not-allowed disabled:opacity-50"
       />
-      <label className="text-sm text-gray-500">au</label>
+      <label className="text-sm text-gray-300 font-medium">au</label>
       <input
         type="date"
         value={endDate}
         onChange={(e) => onEndDateChange(e.target.value)}
         disabled={isLoading}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm
-                   focus:border-blue-500 focus:outline-none focus:ring-2
-                   focus:ring-blue-500/20 transition-colors
+        aria-label="Date de fin"
+        className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-gray-200
+                   focus:border-orange-500 focus:outline-none focus:ring-2
+                   focus:ring-orange-500/30 transition-colors
                    disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>

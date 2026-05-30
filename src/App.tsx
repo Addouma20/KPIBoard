@@ -57,8 +57,15 @@ const App: React.FC = () => {
 
   if (step === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4" role="status" aria-label="Chargement de l'application">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500" aria-hidden="true">
+          <svg viewBox="0 0 50 50" className="h-7 w-7" fill="none">
+            <rect width="50" height="50" rx="4" fill="#FF7900"/>
+            <rect x="14" y="14" width="22" height="22" rx="2" fill="#fff"/>
+          </svg>
+        </div>
+        <div className="h-6 w-6 animate-spin rounded-full border-3 border-orange-500 border-t-transparent" aria-hidden="true" />
+        <span className="text-sm text-gray-600 font-medium">Chargement…</span>
       </div>
     );
   }

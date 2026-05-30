@@ -93,7 +93,7 @@ const IAComparisonCard: React.FC<IAComparisonCardProps> = ({ projectKey, startDa
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text="Comparaison des KPIs entre les US assistées par IA et les US manuelles.\nUn delta négatif (vert) signifie que l'IA est plus performante.">
+        <KPITooltip text={"Comparaison IA vs Manuel — delta des KPIs\n\nΔ = (valeur IA − valeur manuelle) / valeur manuelle × 100\n\n• Δ négatif (vert) = l'IA est plus rapide ou produit moins de bugs\n• Δ positif (rouge) = la valeur IA est plus élevée (moins performant)\n\nSeules les US avec données complètes entrent dans le calcul."}>
           🤖 IA vs Non-IA — Comparaison
         </KPITooltip>
       </h3>
@@ -116,14 +116,14 @@ const IAComparisonCard: React.FC<IAComparisonCardProps> = ({ projectKey, startDa
             ia={formatHours(data.ia.avgLeadTimeHours)}
             nonIA={formatHours(data.nonIA.avgLeadTimeHours)}
             delta={data.deltas.leadTimeDeltaPercent}
-            tooltip="Temps total de la prise en charge à la livraison."
+            tooltip="Lead Time — 1er In Progress → Done (jours ouvrés, lun-ven 9h-18h). Médiane utilisée."
           />
           <MetricRow
             label="Cycle Dev"
             ia={formatHours(data.ia.avgCycleDevTimeHours)}
             nonIA={formatHours(data.nonIA.avgCycleDevTimeHours)}
             delta={data.deltas.cycleDevTimeDeltaPercent}
-            tooltip="Temps de développement pur : dernier 'In Progress' → premier commentaire IA/MR (jours ouvrés)."
+            tooltip="Temps de développement actif : 1er In Progress → 1ère In Review (jours ouvrés, lun-ven 9h-18h)."
           />
           <MetricRow
             label="Pickup Time"
@@ -137,28 +137,28 @@ const IAComparisonCard: React.FC<IAComparisonCardProps> = ({ projectKey, startDa
             ia={formatHours(data.ia.avgDevActiveTimeHours)}
             nonIA={formatHours(data.nonIA.avgDevActiveTimeHours)}
             delta={data.deltas.devActiveTimeDeltaPercent}
-            tooltip="Temps de codage actif : dernier 'In Progress' → premier commentaire IA/MR (identique au Cycle Dev)."
+            tooltip="Temps de codage actif : 1er In Progress → 1ère In Review (identique au Cycle Dev)."
           />
           <MetricRow
             label="Itérations MR"
             ia={data.ia.avgMRIterations?.toFixed(1) ?? '—'}
             nonIA={data.nonIA.avgMRIterations?.toFixed(1) ?? '—'}
             delta={data.deltas.mrIterationsDeltaPercent}
-            tooltip="Nombre moyen d'allers-retours en revue de code."
+            tooltip="Itérations MR — Formule : Moyenne des itérations par US (1 = approuvé du premier coup, N = N-1 allers-retours). Source : champ custom Jira (priorité), fallback: transitions changelog."
           />
           <MetricRow
             label="Bugs / US"
             ia={data.ia.bugsPerUSRatio !== null ? data.ia.bugsPerUSRatio.toFixed(2) : '—'}
             nonIA={data.nonIA.bugsPerUSRatio !== null ? data.nonIA.bugsPerUSRatio.toFixed(2) : '—'}
             delta={data.deltas.bugsPerUSDeltaPercent}
-            tooltip="Ratio bugs par user story livrée."
+            tooltip="Bugs / US — Formule : Total bugs liés aux US du sprint / Total US du sprint (Done + WIP). Score pondéré : Blocker=3, Critical=3, Major=2, Minor=1."
           />
           <MetricRow
             label="First Time Right"
             ia={data.ia.firstTimeRightPercent !== null ? `${data.ia.firstTimeRightPercent}%` : '—'}
             nonIA={data.nonIA.firstTimeRightPercent !== null ? `${data.nonIA.firstTimeRightPercent}%` : '—'}
             delta={data.deltas.firstTimeRightDeltaPercent}
-            tooltip="Pourcentage d'US approuvées en revue dès la première soumission."
+            tooltip="First Time Right — Formule : US en 1 seule itération / Total US avec activité de review × 100. Source : champ custom Jira (priorité), fallback: transitions In Review → Changes Requested / In Progress."
           />
         </tbody>
       </table>

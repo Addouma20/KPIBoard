@@ -10,12 +10,33 @@
 
 ### Lead Time
 ```
-Lead Time = Temps total depuis le démarrage effectif jusqu'à Done
+Lead Time = Temps total depuis l'entrée en backlog jusqu'à Done
 
-Calcul Jira  : Date transition → "Ready"   jusqu'à Date transition → "Done"
-Calcul Git   : Date création branche        jusqu'à Date merge du MR
+Calcul Jira  : 1ère transition → statut "Ready" (ou création si absent)
+               jusqu'à 1ère transition → statut "Done"
 
-Unité : heures ouvrées (ou jours, configurable)
+Unité : heures ouvrées (lun-ven 9h-18h, Europe/Paris)
+1 jour ouvré = 9h
+
+Note : si aucune transition vers "Ready" n'existe dans le changelog,
+       la date de création de l'issue est utilisée comme point de départ.
+```
+
+### Ticket to Merge (KPI principal affiché)
+```
+Ticket to Merge = 1ère transition → "In Progress" jusqu'à 1ère transition → "Done"
+
+Représente le temps total de traitement depuis que quelqu'un a pris le ticket
+jusqu'à sa livraison (inclut attente, review, QA).
+Médiane affichée (résistante aux valeurs extrêmes).
+```
+
+### Cycle Dev Time
+```
+Cycle Dev Time = 1ère transition → statut "In Progress" (hors statuts review)
+                 jusqu'à 1ère transition → statut "In Review"
+
+Mesure le temps de développement pur (coding actif avant la première review).
 ```
 
 ### Cycle Time
@@ -53,11 +74,12 @@ afin de mesurer la vélocité de livraison.
 
 ### Critères d'acceptance
 - [ ] Le Lead Time est calculé entre la 1ère transition vers un statut "Ready" et la 1ère transition vers "Done"
-- [ ] Si l'US repasse par "Ready" → "In Progress" plusieurs fois, on prend le premier "Ready"
-- [ ] Le résultat est exprimé en heures (avec conversion en jours ouvrés disponible)
-- [ ] Les jours non ouvrés (samedi, dimanche) sont exclus du calcul des jours ouvrés
+- [ ] Si aucune transition vers "Ready" n'existe, la date de création de l'issue est utilisée
+- [ ] Le résultat est exprimé en heures ouvrées (lun-ven, 9h-18h, Europe/Paris) ; 1 jour = 9h
 - [ ] Si l'US n'est pas encore "Done", le Lead Time est calculé jusqu'à `now()` (WIP Lead Time)
-- [ ] Une US qui n'a jamais été "Ready" a un Lead Time `null`
+- [ ] **Ticket to Merge** = 1er In Progress → Done (médiane affichée en priorité)
+- [ ] **Cycle Dev Time** = 1er In Progress (hors review) → 1ère In Review
+- [ ] **Pickup Time** = 1ère transition Ready → 1er In Progress (temps d'attente avant développement)
 
 ### Logique de calcul
 

@@ -22,9 +22,9 @@ function formatHours(hours: number | null): string {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 70) return '#22c55e';
-  if (score >= 50) return '#f59e0b';
-  return '#ef4444';
+  if (score >= 70) return '#32C832';
+  if (score >= 50) return '#FF7900';
+  return '#CD3C14';
 }
 
 function scoreBg(score: number): string {
@@ -154,7 +154,7 @@ const DevRankingCard: React.FC<DevRankingCardProps> = ({ sprintId, projectKey, s
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[280px] flex flex-col">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"Équipe de Réalisation — score composite par développeur :\n\n• Lead Time (25%) — rapidité de livraison\n• Cycle Dev (20%) — temps de dév actif\n• Itérations MR (20%) — qualité du code soumis\n• Bugs/US (20%) — fiabilité\n• Complétion (15%) — US terminées\n\nScore de 0 à 100. Plus le score est élevé, meilleure est la performance globale."}>
+        <KPITooltip text={"Score composite par développeur (0-100)\n\nFormule : 100 − pénalité pondérée (ratios normalisés vs moyenne sprint)\n• Lead Time (25%) — 1er In Progress → Done (jours ouvrés)\n• Cycle Dev (20%) — 1er In Progress → 1ère In Review (jours ouvrés)\n• Itérations MR (20%) — moyenne itérations par US (1 = first-time right)\n• Bugs/US (20%) — Total bugs / Total US assignées au développeur\n• Complétion (15%) — US Done / Total US assignées (bonus)\n\nChaque ratio = valeur dev / moyenne sprint (1.0 = dans la norme).\nPlus le score est élevé, meilleure est la performance."}>
           🏆 Équipe de Réalisation
         </KPITooltip>
       </h3>

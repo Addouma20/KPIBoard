@@ -158,26 +158,35 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
-          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-5 lg:px-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Jira KPI Dashboard</h1>
-            <p className="text-sm text-gray-400 mt-0.5">
-              Projet <span className="font-medium text-gray-600">{projectKey}</span> — {userName}
-            </p>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header Orange dark */}
+      <header className="bg-gray-900 text-white shadow-md">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-6 py-4 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded bg-orange-500" aria-hidden="true">
+              <svg viewBox="0 0 50 50" className="h-5 w-5" fill="none">
+                <rect width="50" height="50" rx="4" fill="#FF7900"/>
+                <rect x="14" y="14" width="22" height="22" rx="2" fill="#fff"/>
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight">KPI Dashboard</h1>
+              <p className="text-xs text-gray-400">
+                <span className="text-gray-200 font-medium">{projectKey}</span> — {userName}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
             {/* Board selector (only if multiple boards) */}
             {state.boards.length > 1 && (
               <select
                 value={state.selectedBoardId ?? ''}
                 onChange={(e) => handleBoardSwitch(Number(e.target.value))}
                 disabled={state.loading}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm
-                           focus:border-blue-500 focus:outline-none focus:ring-2
-                           focus:ring-blue-500/20 transition-colors
+                aria-label="Sélection du board"
+                className="rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-gray-200
+                           focus:border-orange-500 focus:outline-none focus:ring-2
+                           focus:ring-orange-500/30 transition-colors
                            disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {state.boards.map((b) => (
@@ -216,10 +225,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
                 isLoading={state.loading}
               />
             )}
-            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${
               state.boardMode === 'kanban'
-                ? 'bg-purple-50 text-purple-700'
-                : 'bg-green-50 text-green-700'
+                ? 'bg-purple-900/50 text-purple-200'
+                : 'bg-green-900/50 text-green-200'
             }`}>
               {state.boardMode === 'kanban' ? 'Kanban' : 'Scrum'}
             </span>
@@ -227,29 +236,30 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
               type="button"
               onClick={handleRefresh}
               disabled={refreshing || state.loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium
-                         text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2
-                         focus:ring-blue-500 focus:ring-offset-2 transition-colors
+              aria-label="Actualiser les données"
+              className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-bold
+                         text-gray-900 hover:bg-orange-600 focus:outline-none focus:ring-2
+                         focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors
                          disabled:cursor-not-allowed disabled:opacity-50"
             >
               {refreshing && (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" aria-hidden="true" />
               )}
               Actualiser
             </button>
             <button
               type="button"
               onClick={onChangeProject}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600
-                         hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+              className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300
+                         hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/40 transition-colors"
             >
               Changer de projet
             </button>
             <button
               type="button"
               onClick={onDisconnect}
-              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600
-                         hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+              className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-300
+                         hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/40 transition-colors"
             >
               Déconnexion
             </button>
@@ -258,19 +268,22 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
       </header>
 
       {/* Main content */}
-      <main className="mx-auto max-w-[1600px] px-6 py-8 lg:px-8">
+      <main id="main-content" className="mx-auto max-w-[1600px] px-6 py-8 lg:px-8">
         {/* Error banner */}
         {state.error && (
-          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <span className="font-medium">Erreur :</span> {state.error}
+          <div role="alert" className="mb-6 rounded-lg border border-error-500/30 bg-error-100 p-4 text-sm text-error-500 font-medium flex items-start gap-2">
+            <svg className="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{state.error}</span>
           </div>
         )}
 
         {/* Loading state */}
         {state.loading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-            <span className="ml-3 text-gray-500">Chargement…</span>
+          <div className="flex items-center justify-center py-20" role="status" aria-label="Chargement des KPIs">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" aria-hidden="true" />
+            <span className="ml-3 text-gray-600 font-medium">Chargement…</span>
           </div>
         )}
 
@@ -278,8 +291,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
           <div className="space-y-6">
             {/* Période analysée (Kanban) */}
             {state.boardMode === 'kanban' && (
-              <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                Période analysée : <span className="font-medium">{kanbanStartDate} → {kanbanEndDate}</span>
+              <div className="rounded-lg border border-orange-500/20 bg-orange-50 px-4 py-3 text-sm text-gray-800">
+                <span className="font-bold text-orange-600">Période :</span>{' '}
+                <span className="font-medium">{kanbanStartDate} → {kanbanEndDate}</span>
               </div>
             )}
 
@@ -309,8 +323,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, projectKey, onDisconnec
 
         {/* Empty state — Scrum only */}
         {!state.loading && state.boardMode === 'scrum' && state.sprints.length === 0 && !state.error && (
-          <div className="py-20 text-center text-gray-500">
-            Aucun sprint disponible. Vérifiez la configuration du board Jira.
+          <div className="py-20 text-center text-gray-600" role="status">
+            <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <p className="font-medium">Aucun sprint disponible</p>
+            <p className="text-sm text-gray-500 mt-1">Vérifiez la configuration du board Jira.</p>
           </div>
         )}
       </main>

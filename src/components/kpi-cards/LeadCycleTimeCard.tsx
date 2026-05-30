@@ -4,37 +4,6 @@ import { getThresholdLevel, LEAD_TIME_THRESHOLDS } from '../../kpi/thresholds.co
 import KPITooltip from './KPITooltip';
 
 /** Workflow schema showing Lead Time and Cycle Time / Ticket-to-Merge brackets */
-const LeadTimeSchema: React.FC = () => (
-  <div className="my-3 rounded-xl bg-slate-50 border border-slate-100 px-3 pt-2 pb-3 text-[10px] font-mono text-slate-500 overflow-x-auto">
-    {/* Status nodes */}
-    <div className="flex items-center gap-0.5 whitespace-nowrap mb-2">
-      <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Backlog</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">Ready</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold">In Progress</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Code Review</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-700">QA</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold">Done ✓</span>
-    </div>
-    {/* Bracket: Lead Time */}
-    <div className="relative pl-10 mb-0.5">
-      <span className="text-[9px] text-slate-400 mr-1 border-l border-b border-slate-300 px-1 py-0.5">
-        ←──────────────────────── LEAD TIME (Ready → Done) ────────────────────────→
-      </span>
-    </div>
-    {/* Bracket: Ticket to Merge */}
-    <div className="relative pl-28 mb-0.5">
-      <span className="text-[9px] text-indigo-500 font-semibold border-l border-b border-indigo-300 px-1 py-0.5">
-        ←──────── ⭐ TICKET TO MERGE (In Progress → Done) ────────→
-      </span>
-    </div>
-  </div>
-);
-
 interface LeadCycleTimeCardProps {
   data: SprintLeadCycleTimeResult | null;
   isLoading: boolean;
@@ -86,7 +55,7 @@ const LeadCycleTimeCard: React.FC<LeadCycleTimeCardProps> = ({ data, isLoading, 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[220px] flex flex-col">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"KPI 4 — Lead Time (Ticket to Merge)\nTemps écoulé entre le premier statut 'In Progress' (Jira) et 'Done' (Merged).\nMesure la vitesse réelle de livraison.\n\nCalculé en jours ouvrés (lun-ven, 9h-18h).\n1 jour ouvré = 9 heures.\n\nDifférence avec le Lead Time complet (Ready→Done) :\n- Lead Time = inclut le temps d'attente en backlog.\n- Ticket to Merge = commence quand l'agent commence réellement à coder."}>
+        <KPITooltip text={"KPI 4 — Lead Time (Ticket to Merge)\n\nFormule : Date 1er \"In Progress\" → Date \"Done\" en jours ouvrés\n1 jour ouvré = 9h (lun-ven, 9h-18h, Europe/Paris)\n\nMédiane affichée (résistante aux valeurs extrêmes).\n85e percentile = durée des cas les plus lents.\n\nDifférence avec les autres mesures :\n• Lead Time complet = Ready → Done (inclut l'attente backlog)\n• Cycle Time = Σ(In Progress + In Review) uniquement\n• Temps revue = In Review → Done"}>
           ⏱ Lead Time <span className="normal-case text-gray-300 font-normal">(Ticket to Merge)</span>
         </KPITooltip>
       </h3>
@@ -111,9 +80,6 @@ const LeadCycleTimeCard: React.FC<LeadCycleTimeCardProps> = ({ data, isLoading, 
           <span className="text-xs text-gray-400">Aucune US In Progress → Done</span>
         </div>
       )}
-
-      {/* Workflow schema */}
-      <LeadTimeSchema />
 
       <p className="text-[10px] text-gray-400 mt-auto">
         85e percentile ≤ {p85Days}j · WIP : {data.wipCount} · {data.issueDetails.length} US

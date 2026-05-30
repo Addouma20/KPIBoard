@@ -29,8 +29,8 @@ type AIAgentKPIGridProps =
   | { mode: 'kanban'; projectKey: string; startDate: string; endDate: string };
 
 const CardFallback: React.FC = () => (
-  <div className="flex h-56 items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm">
-    <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+  <div className="flex h-56 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-card">
+    <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" aria-hidden="true" />
   </div>
 );
 
@@ -78,7 +78,7 @@ const AIAgentKPIGrid: React.FC<AIAgentKPIGridProps> = (props) => {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div role="alert" className="rounded-lg border border-error-500/30 bg-error-100 p-4 text-sm text-error-500 font-medium">
         Erreur lors du chargement des KPIs Agent IA : {error}
       </div>
     );

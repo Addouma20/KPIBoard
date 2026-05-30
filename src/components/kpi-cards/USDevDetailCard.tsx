@@ -126,6 +126,12 @@ const USDevDetailCard: React.FC<USDevDetailCardProps> = ({ mode, projectKey, sta
                 <th className="text-left text-xs font-medium text-slate-400 pb-2 pr-3">US</th>
                 <th className="text-left text-xs font-medium text-slate-400 pb-2 pr-3">Statut</th>
                 <th className="text-center text-xs font-medium text-slate-400 pb-2 pr-3">Cycle Dev</th>
+                <th
+                  className="text-center text-xs font-medium text-slate-400 pb-2 pr-3 cursor-default"
+                  title="Allers-retours In Review → In Progress. 0 = first-time right · — = jamais passé en review."
+                >
+                  Nb Review
+                </th>
                 <th className="text-center text-xs font-medium text-slate-400 pb-2 pr-3">Estimation</th>
                 <th className="text-left text-xs font-medium text-slate-400 pb-2">Développeur(s)</th>
               </tr>
@@ -146,6 +152,25 @@ const USDevDetailCard: React.FC<USDevDetailCardProps> = ({ mode, projectKey, sta
                   </td>
                   <td className="py-2.5 pr-3 text-center">
                     <CycleDevBadge days={us.cycleDevTimeDays} />
+                  </td>
+                  <td className="py-2.5 pr-3 text-center">
+                    {(us.reviewBackAndForthCount == null) ? (
+                      <span className="text-slate-300 text-sm">—</span>
+                    ) : (
+                      <span
+                        className="inline-flex items-center justify-center rounded-full w-6 h-6 text-xs font-bold"
+                        style={{
+                          backgroundColor:
+                            us.reviewBackAndForthCount === 0 ? '#dcfce7' :
+                            us.reviewBackAndForthCount === 1 ? '#fef3c7' : '#fee2e2',
+                          color:
+                            us.reviewBackAndForthCount === 0 ? '#16a34a' :
+                            us.reviewBackAndForthCount === 1 ? '#d97706' : '#dc2626',
+                        }}
+                      >
+                        {us.reviewBackAndForthCount}
+                      </span>
+                    )}
                   </td>
                   <td className="py-2.5 pr-3 text-center">
                     <span className="text-sm font-semibold text-slate-600">

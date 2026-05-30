@@ -3,6 +3,7 @@ import type { StatusCount } from '../types';
 import type { WorkflowKPIValues } from './kpi-cards/WorkflowStatusCard';
 
 const WorkflowStatusCard = React.lazy(() => import('./kpi-cards/WorkflowStatusCard'));
+const CycleDevReviewTrendCard = React.lazy(() => import('./kpi-cards/CycleDevReviewTrendCard'));
 const KPIDevCards = React.lazy(() => import('./kpi-cards/KPIDevCards'));
 
 interface KPIGridProps {
@@ -14,12 +15,12 @@ interface KPIGridProps {
 }
 
 const CardFallback: React.FC = () => (
-  <div className="flex h-56 items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm">
-    <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+  <div className="flex h-56 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-card">
+    <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" aria-hidden="true" />
   </div>
 );
 
-const KPIGrid: React.FC<KPIGridProps> = ({ sprintId, projectKey, startDate, endDate }) => {
+const KPIGrid: React.FC<KPIGridProps> = ({ sprintId, boardId, projectKey, startDate, endDate }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [boardStatuses, setBoardStatuses] = useState<StatusCount[]>([]);
@@ -49,7 +50,7 @@ const KPIGrid: React.FC<KPIGridProps> = ({ sprintId, projectKey, startDate, endD
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div role="alert" className="rounded-lg border border-error-500/30 bg-error-100 p-4 text-sm text-error-500 font-medium">
         Erreur lors du chargement des KPIs : {error}
       </div>
     );
@@ -57,8 +58,8 @@ const KPIGrid: React.FC<KPIGridProps> = ({ sprintId, projectKey, startDate, endD
 
   if (isLoading) {
     return (
-      <div className="flex h-56 items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+      <div className="flex h-56 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-card" role="status" aria-label="Chargement">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" aria-hidden="true" />
       </div>
     );
   }
@@ -69,6 +70,13 @@ const KPIGrid: React.FC<KPIGridProps> = ({ sprintId, projectKey, startDate, endD
       {boardStatuses.length > 0 && (
         <React.Suspense fallback={null}>
           <WorkflowStatusCard statuses={boardStatuses} kpiValues={kpiValues} />
+        </React.Suspense>
+      )}
+
+      {/* Évolution Cycle Dev Time & Σ Reviews — 5 derniers sprints */}
+      {boardId && (
+        <React.Suspense fallback={<CardFallback />}>
+          <CycleDevReviewTrendCard boardId={boardId} />
         </React.Suspense>
       )}
 

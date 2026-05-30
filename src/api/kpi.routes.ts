@@ -214,6 +214,7 @@ router.get('/trend', async (req: Request, res: Response) => {
         sprintName: sprint.name,
         completionRate: cr.success ? cr.data.completionRatePercent : null,
         avgMRIterations: mr.success ? mr.data.averageIterations : null,
+        totalReworkCount: mr.success ? (mr.data.totalReworkCount ?? null) : null,
         avgLeadTimeHours: lct.success ? lct.data.leadTime.averageHours : null,
         avgCycleDevTimeHours: lct.success ? lct.data.cycleDevTime.averageHours : null,
         bugsPerUSRatio: bugs.success ? bugs.data.bugsPerUSRatio : null,

@@ -200,7 +200,11 @@ function extractContributors(issue: JiraIssue): string[] {
   return [...authors];
 }
 
-function buildUSDetailRow(issue: JiraIssue, cycleDevTimeHours: number | null): USDevDetailRow {
+function buildUSDetailRow(
+  issue: JiraIssue,
+  cycleDevTimeHours: number | null,
+  reviewBackAndForthCount: number | null,
+): USDevDetailRow {
   return {
     key: issue.key,
     summary: issue.fields.summary,
@@ -210,6 +214,7 @@ function buildUSDetailRow(issue: JiraIssue, cycleDevTimeHours: number | null): U
     storyPoints: issue.fields.story_points ?? null,
     assignee: issue.fields.assignee?.displayName ?? 'Non assigné',
     contributors: extractContributors(issue),
+    reviewBackAndForthCount,
   };
 }
 
@@ -224,7 +229,8 @@ async function buildUSDetails(
     stories.map(async (issue) => {
       const leadResult = await calculateLeadCycleTime(jiraClient, issue.key, { ...DEFAULT_OPTIONS, isIA });
       const cycleDevTimeHours = leadResult.success ? leadResult.data.cycleDevTimeHours : null;
-      return buildUSDetailRow(issue, cycleDevTimeHours);
+      const reviewBackAndForthCount = leadResult.success ? leadResult.data.reviewBackAndForthCount : null;
+      return buildUSDetailRow(issue, cycleDevTimeHours, reviewBackAndForthCount);
     }),
   );
 

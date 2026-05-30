@@ -55,7 +55,7 @@ const ROICard: React.FC<ROICardProps> = ({ projectKey, startDate, endDate }) => 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
-        <KPITooltip text="Vue ROI : adoption IA, gains estimés en temps et qualité.">
+        <KPITooltip text={"ROI Agent IA\n\n• Adoption IA = US assistées IA / Total US × 100\n• Jours économisés = (Cycle Dev humain − Cycle Dev IA) × Nb US IA / 9h\n• Réduction Cycle Dev = (CycleDev_humain − CycleDev_IA) / CycleDev_humain × 100\n• FTR IA = % MR IA approuvées sans retour au 1er passage"}>
           📊 ROI — Agent IA
         </KPITooltip>
       </h3>

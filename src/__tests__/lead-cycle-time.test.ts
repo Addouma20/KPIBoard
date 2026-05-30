@@ -58,6 +58,7 @@ function makeAssigneeHistory(
 }
 
 
+function makeIssue(
   key: string,
   summary: string,
   histories: JiraChangelogHistory[]
@@ -414,6 +415,58 @@ describe('calculateLeadCycleTime', () => {
     // Creation (Apr 1 09:00) → Done (Apr 2 09:00) = 24 calendar hours (businessDaysOnly: false)
     expect(result.data.leadTimeHours).toBe(24);
     expect(result.data.leadTimeBusinessDays).toBeCloseTo(2.7, 1);
+  });
+
+  it('reviewBackAndForthCount is null when ticket never passed through In Review', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'In Progress'),
+      makeHistory('2', '2026-04-02T09:00:00.000Z', 'In Progress', 'Done'),
+    ];
+    const issue = makeIssue('PROJ-AR-1', 'No review', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({ success: true, data: issue });
+    vi.spyOn(mockClient, 'findFirstAICommentDate').mockResolvedValue(null);
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-AR-1', testOptions);
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.reviewBackAndForthCount).toBeNull();
+  });
+
+  it('reviewBackAndForthCount is 0 when ticket goes In Review → Done without returning', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'In Progress'),
+      makeHistory('2', '2026-04-01T16:00:00.000Z', 'In Progress', 'In Review'),
+      makeHistory('3', '2026-04-02T10:00:00.000Z', 'In Review', 'Done'),
+    ];
+    const issue = makeIssue('PROJ-AR-2', 'First-time right', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({ success: true, data: issue });
+    vi.spyOn(mockClient, 'findFirstAICommentDate').mockResolvedValue(null);
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-AR-2', testOptions);
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.reviewBackAndForthCount).toBe(0);
+  });
+
+  it('reviewBackAndForthCount is 1 when ticket returns once from In Review to In Progress', async () => {
+    const histories = [
+      makeHistory('1', '2026-04-01T09:00:00.000Z', 'To Do', 'In Progress'),
+      makeHistory('2', '2026-04-01T16:00:00.000Z', 'In Progress', 'In Review'),
+      makeHistory('3', '2026-04-01T18:00:00.000Z', 'In Review', 'In Progress'),
+      makeHistory('4', '2026-04-02T09:00:00.000Z', 'In Progress', 'In Review'),
+      makeHistory('5', '2026-04-02T14:00:00.000Z', 'In Review', 'Done'),
+    ];
+    const issue = makeIssue('PROJ-AR-3', 'One back-and-forth', histories);
+    vi.spyOn(mockClient, 'getIssueWithChangelog').mockResolvedValue({ success: true, data: issue });
+    vi.spyOn(mockClient, 'findFirstAICommentDate').mockResolvedValue(null);
+
+    const result = await calculateLeadCycleTime(mockClient, 'PROJ-AR-3', testOptions);
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.reviewBackAndForthCount).toBe(1);
   });
 });
 

@@ -10,32 +10,6 @@ interface CompletionRateCardProps {
 }
 
 /** Inline schema for KPI 3: Ticket lifecycle — human vs agent close */
-const AutonomieSchema: React.FC = () => (
-  <div className="my-3 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2 text-[10px] font-mono text-slate-500 overflow-x-auto">
-    <div className="flex items-center gap-0.5 whitespace-nowrap mb-1">
-      <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Backlog</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">In Progress</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Code Review</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-teal-100 text-teal-700">QA</span>
-      <span className="text-slate-400">→</span>
-      <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700">Done ✓</span>
-    </div>
-    <div className="flex text-[9px] text-slate-400 gap-4 mt-1 pl-1">
-      <span>
-        <span className="inline-block w-2 h-0.5 bg-green-400 mr-1 align-middle" />
-        <strong className="text-green-600">Autonome</strong> = Done posé par le compte workflow (agent IA), sans touche humaine
-      </span>
-      <span>
-        <span className="inline-block w-2 h-0.5 bg-slate-400 mr-1 align-middle" />
-        <strong className="text-slate-600">Manuel</strong> = Done posé par un humain
-      </span>
-    </div>
-  </div>
-);
-
 const CompletionRateCard: React.FC<CompletionRateCardProps> = ({ data, isLoading, error }) => {
   if (isLoading) {
     return (
@@ -79,7 +53,7 @@ const CompletionRateCard: React.FC<CompletionRateCardProps> = ({ data, isLoading
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[220px] flex flex-col">
       {/* KPI 3 primary: Taux d'Autonomie E2E */}
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"KPI 3 — Taux d'Autonomie E2E\n% de tickets Jira clos sans que l'humain n'ait touché au code.\nDétecte si l'agent délègue réellement ou si l'humain 'finit le job'.\n\n= doneByWorkflow / totalDone × 100\n\n100% = l'agent a fermé tous les tickets seul.\n< 50% = l'humain intervient souvent pour finaliser."}>
+        <KPITooltip text={"Taux d'Autonomie E2E — Réalisation par le Workflow\n\nTaux d'autonomie = US Done par workflow / Total US Done × 100\nTaux de complétion = Total US Done / Total US du sprint × 100\n\nUne US est 'Done par workflow' si la transition finale vers Done est effectuée par le compte de service (non par un humain).\n\n100% = l'agent a fermé tous les tickets seul.\n< 50% = l'humain intervient souvent pour finaliser."}>
           🤖 Taux d&apos;Autonomie <span className="normal-case text-gray-300 font-normal">(E2E)</span>
         </KPITooltip>
       </h3>
@@ -109,9 +83,6 @@ const CompletionRateCard: React.FC<CompletionRateCardProps> = ({ data, isLoading
           {data.completionRatePercent.toFixed(0)}% complétées
         </span>
       </div>
-
-      {/* Schema */}
-      <AutonomieSchema />
 
       {/* Stacked bar: Agent vs Human */}
       {totalDone > 0 && (

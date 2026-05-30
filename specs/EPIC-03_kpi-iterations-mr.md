@@ -22,9 +22,9 @@ Mauvais signal = > 3 (qualité du code généré par le workflow insuffisante)
 
 | Source | Champ Jira | Description |
 |--------|-----------|-------------|
-| **Primaire** | Champ custom `iterations` ou `review_cycles` sur l'issue | Valeur saisie manuellement ou via webhook |
-| **Secondaire** | Transitions de statut Jira `In Review → Changes Requested → In Review` | Comptage des allers-retours |
-| **Tertiaire** | Commentaires Jira avec tag `[MR-REVIEW]` | Si workflow commente les cycles |
+| **Primaire** | Champ custom configurable (`customfield_iterations`) | Lu en premier ; si présent, les transitions sont ignorées |
+| **Secondaire** | Transitions changelog : `In Review → Changes Requested` ou `In Review → In Progress` | Comptage des allers-retours si le champ custom est absent |
+| **Unavailable** | Aucune activité de review détectée dans le changelog | `iterationsCount = null` (non compté dans les stats) |
 
 ---
 
@@ -41,6 +41,9 @@ afin de mesurer la qualité des MR générés par le workflow.
 - [ ] En fallback secondaire, l'extraction compte les transitions `In Review → In Progress` (retour en développement)
 - [ ] Si aucune donnée disponible, la valeur est `null` (pas `0`)
 - [ ] Une itération = 1 aller-retour (demande de modification reçue)
+- [ ] `iterationsCount = reviewTransitions.length + 1` si des retours ont été détectés (`1` si review directe, `N` si N-1 allers-retours)
+- [ ] Le **Taux d'Approbation 1er passage** (First-Time Right) = `oneIteration / (oneIteration + twoIterations + threeOrMore) × 100` (exclut les US sans données de review)
+- [ ] L'**Indice de Rework** = Moyenne des `(iterationsCount - 1)` par US avec données de review
 
 ### Logique de calcul
 
@@ -134,11 +137,20 @@ afin d'identifier si la qualité du workflow s'améliore.
 ```typescript
 // COPILOT: Créer src/kpi/thresholds.config.ts
 
+// Seuils pour l'Indice de Rework (allers-retours moyens, 0 = meilleur)
 export const MR_ITERATIONS_THRESHOLDS = {
-  excellent: { max: 1.2, color: '#22c55e', label: 'Excellent' },
-  good:      { max: 1.8, color: '#84cc16', label: 'Bon' },
-  warning:   { max: 2.5, color: '#f59e0b', label: 'À surveiller' },
+  excellent: { max: 0.2,      color: '#22c55e', label: 'Excellent' },
+  good:      { max: 0.8,      color: '#84cc16', label: 'Bon' },
+  warning:   { max: 1.5,      color: '#f59e0b', label: 'A surveiller' },
   critical:  { max: Infinity, color: '#ef4444', label: 'Critique' },
+};
+
+// Seuils pour le Taux d'Approbation 1er passage (% plus élevé = meilleur)
+export const FIRST_TIME_RIGHT_THRESHOLDS = {
+  excellent: { min: 80, color: '#22c55e', label: '>= 80%' },
+  good:      { min: 60, color: '#84cc16', label: '>= 60%' },
+  warning:   { min: 40, color: '#f59e0b', label: '>= 40%' },
+  critical:  { min: 0,  color: '#ef4444', label: '< 40%' },
 };
 
 // COPILOT: Créer une fonction getThreshold(value: number) qui retourne le bon seuil

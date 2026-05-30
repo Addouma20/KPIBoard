@@ -26,11 +26,11 @@ interface SprintTrendCardProps {
 }
 
 const COLORS = {
-  completionRate: '#22c55e',
-  avgMRIterations: '#f59e0b',
-  avgLeadTimeHours: '#f59e0b',
-  avgCycleDevTimeHours: '#3b82f6',
-  bugsPerUSRatio: '#ef4444',
+  completionRate: '#32C832',
+  avgMRIterations: '#FF7900',
+  avgLeadTimeHours: '#FF7900',
+  avgCycleDevTimeHours: '#527EDB',
+  bugsPerUSRatio: '#CD3C14',
 } as const;
 
 const BUSINESS_HOURS_PER_DAY = 9;
@@ -108,7 +108,7 @@ const SprintTrendCard: React.FC<SprintTrendCardProps> = ({ boardId }) => {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm min-h-[320px] flex flex-col">
       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-1">
-        <KPITooltip text={"Évolution des temps sur les 10 derniers sprints.\n\n• Lead Time (j) — délai de livraison (À faire → Done)\n• Cycle Dev (j) — temps de dév actif (Dernier In Progress → 1er commentaire IA/MR)\n\nTous les temps sont en jours ouvrés."}>
+        <KPITooltip text={"Évolution des temps sur les 10 derniers sprints.\n\n• Lead Time (j) — 1er In Progress → Done (jours ouvrés)\n• Cycle Dev (j) — dernier In Progress → 1er commentaire IA/MR (jours ouvrés)\n\n1 jour ouvré = 9h (lun-ven). Médiane par sprint."}>
           📈 Tendances KPI
         </KPITooltip>
       </h3>
